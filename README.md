@@ -55,16 +55,38 @@ git clone https://github.com/KiwiSingh/AbletonRPC
 
 ## Frequently asked questions
 **Q.** Is this a port of DawRPC?
+
 **A.** No, it is not. I wanted to make a port of DAWRPC, but since I only have Ableton Live and Studio One to experiment with, not to mention the fact that I would have to effectively reverse engineer a ton of Windows DLL and f*ck around in C#, I dropped the idea (at least for the timebeing).
+
+
 **Q.** I get a `ModuleNotFound` error. Help!
+
 **A.** This is most likely because you have not correctly initialized a virtual environment. Restart your shell if you have already installed all requirements.
+
+
+
 **Q.** VS Code won't let me edit your Python script!
+
 **A.** Refer to the answer above.
+
+
 **Q.** Can I make a Discord bot/plugin/other self-hosted instance using this?
+
 **A.** Sure. Go crazy. It's FOSS. Though please note that I do not condone using modified Discord clients, and if you end up getting into any trouble because of a plugin/self-bot, I am not liable. But since this project is FOSS, I cannot stop anyone from forking it and doing with it as they please.
+
+
 **Q.** Is this safe? Will I mess up my Ableton install?
+
 **A.** If you know what you're doing, this is completely safe. If you do not feel comfortable with such an involved solution, please look elsewhere.
+
+
+**Q.** My art assets don't show up in my Discord rich presence?
+
+**A.** Please be patient! Your assets will take a while (10 minutes to an hour) to reflect on your Discord Developers Portal, so please don't upload the same assets again and again. Once they show up in your Developers Portal, you should be good to go with the `abletonrpc.py` script.
+
+
 **Q.** Where do I contact you regarding questions about this project?
+
 **A.** You may reach out to my email address at [kiwisingh@proton.me](mailto:kiwisingh@proton.me)
 
 
