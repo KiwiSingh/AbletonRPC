@@ -30,13 +30,14 @@ git clone https://github.com/KiwiSingh/AbletonRPC
 4. Inside your Applications folder (or external drive, if you're a madlad who installed Ableton on an external SSD for some reason), right click `Ableton Live 12 Suite.app` and navigate to `/Applications/Ableton Live 12 Suite.app/Contents/App-Resources/MIDI Remote Scripts`.
 5. Inside the `MIDI Remote Scripts` folder paste the `FauxMIDI` folder from this repo.
 6. Modify the `log_file_path = "/Volumes/Charidrive/rpctemp/CurrentProjectLog.txt"` line so that the value of `log_file_path` represents a path on your own system.
-6a. In case the script throws any errors in stdout, create or delete said log file accordingly.
+
+      6a. In case the script throws any errors in stdout, create or delete said log file accordingly.
 7. Inside of Terminal, navigate to the `FauxMIDI` folder and give read, write and execute permissions to the MIDI remote script. `chmod +rwx` the entire directory if needed.
 8. Open up Ableton Live, and set up the `FauxMIDI` device which will interface with your Discord application, as per the below screenshot.
 
 ![MIDI](https://i.ibb.co/9pbMpW1/Ableton-MIDIprefs.png)
 
-10. Create a new Python 3 virtual environment so that you don't bork up your existing install. Install the reqs needed by `abletonrpc.py` using
+9. Create a new Python 3 virtual environment so that you don't bork up your existing install. Install the reqs needed by `abletonrpc.py` using
 
     ```zsh
     pip install -r requirements.txt
@@ -46,11 +47,11 @@ git clone https://github.com/KiwiSingh/AbletonRPC
     pip3 install -r requirements.txt
     ```
     
-12. Open up the `abletonrpc.py` and replace the placeholder in `client_id = "Your Client ID"  # Replace with your actual client ID` with your actual client ID.
-13. `chmod +x` the `abletonrpc.py` script
-14. Fire up Discord if you haven't already. Remove Invisible status if enabled
-15. Run `python abletonrpc.py` or `python3 abletonrpc.py`
-16. Enjoy!
+10. Open up the `abletonrpc.py` and replace the placeholder in `client_id = "Your Client ID"  # Replace with your actual client ID` with your actual client ID.
+11. `chmod +x` the `abletonrpc.py` script
+12. Fire up Discord if you haven't already. Remove Invisible status if enabled
+13. Run `python abletonrpc.py` or `python3 abletonrpc.py`
+14. Enjoy!
 
 
 ## Frequently asked questions
