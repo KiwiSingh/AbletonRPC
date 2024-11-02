@@ -1,5 +1,8 @@
 # AbletonRPC
-![AbletonRPC logo](https://i.ibb.co/V9NbLcY/ableton-image-beeg.png)
+<p align="center">
+  <img src="https://i.ibb.co/V9NbLcY/ableton-image-beeg.png" alt="AbletonRPC logo">
+</p>
+
 
 Unofficial Ableton Live Discord rich presence for macOS
 
