@@ -93,7 +93,7 @@ git clone https://github.com/KiwiSingh/AbletonRPC
 
 **Q.** Why give so many permissions to the `__init.py__` and `abletonrpc.py` scripts?
 
-**A.** Because macOS - like many things Apple - (unfortunately) has a very odd approach to security. You can try and run `abletonrpc.py` without granting said permissions, but if you get any strange errors in stdout, it is likely a permissions issue.
+**A.** Because macOS - like many things Apple - (unfortunately) has a very odd approach to security. You can try running `abletonrpc.py` without granting said permissions, but if you get any strange errors in stdout, it is likely a permissions issue.
 
 
 **Q.** Where do I contact you regarding questions about this project?
