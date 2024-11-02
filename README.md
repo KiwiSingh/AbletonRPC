@@ -91,6 +91,11 @@ git clone https://github.com/KiwiSingh/AbletonRPC
 **A.** No. The `FauxMIDI` device is only there to interface with the application you create on your Discord Developer Portal. It neither interferes with your existing MIDI mappings, nor interacts with any stock Ableton plugins/external VST instruments.
 
 
+**Q.** Why give so many permissions to the `__init.py__` and `abletonrpc.py` scripts?
+
+**A.** Because macOS - like many things Apple - (unfortunately) has a very odd approach to security. You can try and run `abletonrpc.py` without granting said permissions, but if you get any strange errors in stdout, it is likely a permissions issue.
+
+
 **Q.** Where do I contact you regarding questions about this project?
 
 **A.** You may reach out to my email address at [kiwisingh@proton.me](mailto:kiwisingh@proton.me)
