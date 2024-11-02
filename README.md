@@ -62,7 +62,7 @@ git clone https://github.com/KiwiSingh/AbletonRPC
 
 **Q.** I get a `ModuleNotFound` error. Help!
 
-**A.** This is most likely because you have not correctly initialized a virtual environment. Restart your shell if you have already installed all requirements.
+**A.** This is most likely because you have not correctly initialized a virtual environment. Restart your shell if you have already installed all requirements, and reactivate the virtual environment using `source venv/bin/activate` if needed (replace `venv` with the name of your actual virtual environment obviously; in my case it is called `RPC`).
 
 
 
