@@ -83,7 +83,7 @@ git clone https://github.com/KiwiSingh/AbletonRPC
 
 **Q.** My art assets don't show up in my Discord rich presence?
 
-**A.** Please be patient! Your assets will take a while (10 minutes to an hour) to reflect on your Discord Developers Portal, so please don't upload the same assets again and again. Once they show up in your Developers Portal, you should be good to go with the `abletonrpc.py` script.
+**A.** Please be patient! Your assets will take a while (10 minutes to an hour) to reflect on your Discord Developer Portal once uploaded, so please don't upload the same assets again and again, as this will cause issues with the script (due to ambiguous key-value pairing). Once they show up in your Developer Portal, you should be good to go with the `abletonrpc.py` script.
 
 
 **Q.** I see that you've used a MIDI remote script. Will this mess up my existing MIDI mappings for my MPK Mini/AKAI Fire/Ableton Push/ATOM SQ/other MIDI controller?
