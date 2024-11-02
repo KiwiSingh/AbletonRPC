@@ -71,9 +71,11 @@ git clone https://github.com/KiwiSingh/AbletonRPC
 **A.** Refer to the answer above.
 
 
+
 **Q.** Can I make a Discord bot/plugin/other self-hosted instance using this?
 
 **A.** Sure. Go crazy. It's FOSS. Though please note that I do not condone using modified Discord clients, and if you end up getting into any trouble because of a plugin/self-bot, I am not liable. But since this project is FOSS, I cannot stop anyone from forking it and doing with it as they please.
+
 
 
 **Q.** Is this safe? Will I mess up my Ableton install?
@@ -81,9 +83,11 @@ git clone https://github.com/KiwiSingh/AbletonRPC
 **A.** If you know what you're doing, this is completely safe. If you do not feel comfortable with such an involved solution, please look elsewhere.
 
 
+
 **Q.** My art assets don't show up in my Discord rich presence?
 
 **A.** Please be patient! Your assets will take a while (10 minutes to an hour) to reflect on your Discord Developer Portal once uploaded, so please don't upload the same assets again and again, as this will cause issues with the script (due to ambiguous key-value pairing). Once they show up in your Developer Portal, you should be good to go with the `abletonrpc.py` script.
+
 
 
 **Q.** I see that you've used a MIDI remote script. Will this mess up my existing MIDI mappings for my MPK Mini/AKAI Fire/Ableton Push/ATOM SQ/other MIDI controller?
@@ -91,9 +95,11 @@ git clone https://github.com/KiwiSingh/AbletonRPC
 **A.** No. The `FauxMIDI` device is only there to interface with the application you create on your Discord Developer Portal. It neither interferes with your existing MIDI mappings, nor interacts with any stock Ableton plugins/external VST instruments.
 
 
+
 **Q.** Why give so many permissions to the `__init.py__` and `abletonrpc.py` scripts?
 
 **A.** Because macOS - like many things Apple - (unfortunately) has a very odd approach to security. You can try running `abletonrpc.py` without granting said permissions, but if you get any strange errors in stdout, it is likely a permissions issue.
+
 
 
 **Q.** Where do I contact you regarding questions about this project?
