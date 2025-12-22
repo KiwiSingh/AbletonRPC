@@ -103,11 +103,14 @@ git clone https://github.com/KiwiSingh/AbletonRPC
 
 **A.** Because macOS - like many things Apple - (unfortunately) has a very odd approach to security. You can try running `abletonrpc.py` without granting said permissions, but if you get any strange errors in stdout, it is likely a permissions issue.
 
-
+**Q.** Have you tested this with the latest version of Ableton Live?
+**A.** Yes, as of the time of this update, I have tested this with Ableton Live 12.3.2 Suite on macOS Tahoe 26.3. However, I have not tested this on Windows or Linux, so your mileage may vary.
 
 **Q.** Where do I contact you regarding questions about this project?
 
 **A.** You may reach out to my email address at [kiwisingh@proton.me](mailto:kiwisingh@proton.me)
+
+
 
 
 
