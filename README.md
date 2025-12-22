@@ -12,7 +12,7 @@ This experimental rich presence client is self-hosted (i.e. on your own Discord 
 ## Stuff needed
 
 1. Existing Discord account
-2. Any Discord client (preferably the official one, pls; let's keep it halal thanks 🙏)
+2. Any desktop (not WEB!) Discord client (preferably the official one, pls; let's keep it halal thanks 🙏)
 3. Account on the Discord Developer Portal
 4. An IDE to edit code
 5. Ableton Live 12 Suite ~~(this solution is hardcoded for 12 Suite; it may not work on 11 and below without some major modifications)~~
