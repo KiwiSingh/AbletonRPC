@@ -41,7 +41,13 @@ git clone https://github.com/KiwiSingh/AbletonRPC
 
 ![MIDI](https://i.ibb.co/9pbMpW1/Ableton-MIDIprefs.png)
 
-9. Create a new Python 3 virtual environment so that you don't bork up your existing install. Install the reqs needed by `abletonrpc.py` using
+9. Create a new Python 3 virtual environment so that you don't bork up your existing install.
+
+```zsh
+python3 -m venv rpc
+```
+
+Install the reqs needed by `abletonrpc.py` using
 
     ```zsh
     pip install -r requirements.txt
