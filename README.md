@@ -6,7 +6,8 @@
 
 Unofficial Ableton Live Discord rich presence for macOS
 
-## DISCLAIMER 
+## DISCLAIMER
+
 This experimental rich presence client is self-hosted (i.e. on your own Discord Developer Portal) and involves making some rudimentary modifications to your Ableton Live installation. On macOS, applications are actually directories, with a runner to execute any code - along with the assets needed to execute said code - inside that directory. If this is something you are not comfortable with, or have no idea what the heck you're doing, please stop here.
 
 ## Stuff needed
@@ -19,44 +20,39 @@ This experimental rich presence client is self-hosted (i.e. on your own Discord 
 6. A functioning brain 🧠
 
 ## Instructions
+
 ### **Running from CLI (for expert users)**
-1. Clone this repo using 
+
+1. Clone this repo using
 
 ```zsh
 git clone https://github.com/KiwiSingh/AbletonRPC
+
 ```
+
 2. Create a new application on your Discord Developer Portal, and fill in the deets as per the screenshots below.
-
-![1](https://i.ibb.co/PNfY9nD/Discord-Ded1.png)
-![2](https://i.ibb.co/gMfKK06/Discord-Ded2.png)
-
 3. Close Ableton Live in case it is open (obv. save any unsaved projects first)
 4. Inside your Applications folder (or external drive, if you're a madlad who installed Ableton on an external SSD for some reason), right click `Ableton Live 12 Suite.app` and navigate to `/Applications/Ableton Live 12 Suite.app/Contents/App-Resources/MIDI Remote Scripts`.
 5. Inside the `MIDI Remote Scripts` folder paste the `FauxMIDI` folder from this repo.
 6. Open up `__init__.py` in your IDE and modify the `log_file_path = "/Volumes/Charidrive/rpctemp/CurrentProjectLog.txt"` line so that the value of `log_file_path` represents a path on your own system.
-
-      6a. In case the script throws any errors in stdout when run, create a blank `CurrentProjectLog.txt` file (inside the directory that `log_file_path` points to obviously).
+6a. In case the script throws any errors in stdout when run, create a blank `CurrentProjectLog.txt` file (inside the directory that `log_file_path` points to obviously).
 7. Inside of Terminal, navigate to the `FauxMIDI` folder and give read, write and execute permissions to the MIDI remote script. `chmod +rwx` the entire directory if needed.
 8. Open up Ableton Live, and set up the `FauxMIDI` device which will interface with your Discord application, as per the below screenshot.
-
-![MIDI](https://i.ibb.co/9pbMpW1/Ableton-MIDIprefs.png)
-
 9. Create a new Python 3 virtual environment so that you don't bork up your existing install.
 
 ```zsh
 python3 -m venv rpc
+source rpc/bin/activate
+
 ```
 
 Install the reqs needed by `abletonrpc.py` using
 
-    ```zsh
-    pip install -r requirements.txt
-    ```
-    or
-    ```
-    pip3 install -r requirements.txt
-    ```
-    
+```zsh
+pip install -r requirements.txt
+
+```
+
 10. Open up the `abletonrpc.py` and replace the placeholder in `client_id = "Your Client ID"  # Replace with your actual client ID` with your actual client ID.
 11. `chmod +x` the `abletonrpc.py` script
 12. Fire up Discord if you haven't already. Remove Invisible status if enabled
@@ -64,25 +60,21 @@ Install the reqs needed by `abletonrpc.py` using
 14. Enjoy!
 
 ### Using the GUI (for the less technically-inclined)
-1. Clone this repo using 
+
+1. Clone this repo using
 
 ```zsh
 git clone https://github.com/KiwiSingh/AbletonRPC
+
 ```
+
 Or just download the zip from GitHub and unzip in a directory of your choice (for use later).
 
 2. Create a new application on your Discord Developer Portal, and fill in the deets as per the screenshots below.
-
-![1](https://i.ibb.co/PNfY9nD/Discord-Ded1.png)
-![2](https://i.ibb.co/gMfKK06/Discord-Ded2.png)
-
 3. Download the latest release of the GUI from the Releases tab.
 4. Inside your Applications folder (or external drive, if you're a madlad who installed Ableton on an external SSD for some reason), right click `Ableton Live 12 Suite.app` and navigate to `/Applications/Ableton Live 12 Suite.app/Contents/App-Resources/MIDI Remote Scripts`.
 5. Inside the `MIDI Remote Scripts` folder paste the `FauxMIDI` folder from this repo.
 6. Open up Ableton Live, and set up the `FauxMIDI` device which will interface with your Discord application, as per the below screenshot.
-
-![MIDI](https://i.ibb.co/9pbMpW1/Ableton-MIDIprefs.png)
-
 7. Open up `__init__.py` in your IDE or text editor and modify the `log_file_path = "/Volumes/Charidrive/rpctemp/CurrentProjectLog.txt"` line so that the value of `log_file_path` represents a path on your own system.
 8. Mount the DMG from the Releases tab (double-click on the file directly from your browser, or inside of Finder).
 9. Move `AbletonRPC.app` to your Applications folder
@@ -93,46 +85,34 @@ Or just download the zip from GitHub and unzip in a directory of your choice (fo
 **NOTE:** I am trying to make the GUI as painless as possible. In the future, if I can, I will make it so that the GUI safely patches your Ableton Live install FOR you (with the properly modified MIDI remote script), so that you don't have to do ANYTHING besides create an app on the Discord Developers Portal (I am looking into streamlining this as well).
 
 ## Frequently asked questions
+
 **Q.** Is this a port of [DAWRPC](https://github.com/Serena1432/DAWRPC)?
 
 **A.** No, it is not. I initially wanted to make a port of DAWRPC, but since I only have Ableton Live and Studio One (and GarageBand technically) to experiment with, not to mention the fact that I would have to effectively reverse engineer a ton of Windows DLLs and f*ck around in C#, I dropped the idea entirely (at least for the timebeing).
-
 
 **Q.** I get a `ModuleNotFound` error. Help!
 
 **A.** This is most likely because you have not correctly initialized a virtual environment. Restart your shell if you have already installed all requirements, and reactivate the virtual environment using `source venv/bin/activate` if needed (replace `venv` with the name of your actual virtual environment obviously; in my case it is called `RPC`).
 
-
-
 **Q.** VS Code won't let me edit your Python script!
 
 **A.** Refer to the answer above.
-
-
 
 **Q.** Can I make a Discord bot/plugin/other self-hosted instance using this?
 
 **A.** Sure. Go crazy. It's FOSS. Though please note that I do not condone using modified Discord clients, and if you end up getting into any trouble because of a plugin/self-bot, I am not liable. But since this project is FOSS, I cannot stop anyone from forking it and doing with it as they please.
 
-
-
 **Q.** Is this safe? Will I mess up my Ableton install?
 
 **A.** If you know what you're doing, this is completely safe. If you do not feel comfortable with such an involved solution, please look elsewhere.
-
-
 
 **Q.** My art assets don't show up in my Discord rich presence?
 
 **A.** Please be patient! Your assets will take a while (10 minutes to an hour) to reflect on your Discord Developer Portal once uploaded, so please don't upload the same assets again and again, as this will cause issues with the script (due to ambiguous key-value pairing). Once they show up in your Developer Portal, you should be good to go with the `abletonrpc.py` script.
 
-
-
 **Q.** I see that you've used a MIDI remote script. Will this mess up my existing MIDI mappings for my MPK Mini/AKAI Fire/Ableton Push/ATOM SQ/other MIDI controller?
 
 **A.** No. The `FauxMIDI` device is only there to interface with the application you create on your Discord Developer Portal. It neither interferes with your existing MIDI mappings, nor interacts with any stock Ableton plugins/external VST instruments.
-
-
 
 **Q.** Why give so many permissions to the `__init.py__` and `abletonrpc.py` scripts?
 
@@ -144,8 +124,3 @@ Or just download the zip from GitHub and unzip in a directory of your choice (fo
 **Q.** Where do I contact you regarding questions about this project?
 
 **A.** You may reach out to my email address at [kiwisingh@proton.me](mailto:kiwisingh@proton.me)
-
-
-
-
-
