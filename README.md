@@ -14,11 +14,12 @@ This experimental rich presence client is self-hosted (i.e. on your own Discord 
 1. Existing Discord account
 2. Any desktop (not WEB!) Discord client (preferably the official one, pls; let's keep it halal thanks 🙏)
 3. Account on the Discord Developer Portal
-4. An IDE to edit code
+4. An IDE or a text editor
 5. Ableton Live 12 Suite ~~(this solution is hardcoded for 12 Suite; it may not work on 11 and below without some major modifications)~~
 6. A functioning brain 🧠
 
 ## Instructions
+### **Running from CLI (for expert users)**
 1. Clone this repo using 
 
 ```zsh
@@ -56,6 +57,28 @@ git clone https://github.com/KiwiSingh/AbletonRPC
 13. Run `python abletonrpc.py` or `python3 abletonrpc.py`
 14. Enjoy!
 
+### Using the GUI (for the less technically-inclined)
+1. Clone this repo using 
+
+```zsh
+git clone https://github.com/KiwiSingh/AbletonRPC
+```
+2. Create a new application on your Discord Developer Portal, and fill in the deets as per the screenshots below.
+
+![1](https://i.ibb.co/PNfY9nD/Discord-Ded1.png)
+![2](https://i.ibb.co/gMfKK06/Discord-Ded2.png)
+
+3. Download the latest release of the GUI from the Releases tab.
+4. Inside your Applications folder (or external drive, if you're a madlad who installed Ableton on an external SSD for some reason), right click `Ableton Live 12 Suite.app` and navigate to `/Applications/Ableton Live 12 Suite.app/Contents/App-Resources/MIDI Remote Scripts`.
+5. Inside the `MIDI Remote Scripts` folder paste the `FauxMIDI` folder from this repo.
+6. Open up `__init__.py` in your IDE or text editor and modify the `log_file_path = "/Volumes/Charidrive/rpctemp/CurrentProjectLog.txt"` line so that the value of `log_file_path` represents a path on your own system.
+7. Mount the DMG from the Releases tab
+8. Move AbletonRPC.app to your Applications folder
+9. Go through the setup flow (including your log directory and Discord client ID) and hit `Save & Start`.
+10. The GUI will exit (without any popup messages) and AbletonRPC will now run at startup for you.
+11. Enjoy!
+
+**NOTE:** I am trying to make the GUI as painless as possible. In the future, if I can, I will make it so that the GUI safely patches your Ableton Live install FOR you (with the properly modified MIDI remote script), so that you don't have to do ANYTHING besides create an app on the Discord Developers Portal (I am looking into streamlining this as well).
 
 ## Frequently asked questions
 **Q.** Is this a port of [DAWRPC](https://github.com/Serena1432/DAWRPC)?
@@ -104,7 +127,7 @@ git clone https://github.com/KiwiSingh/AbletonRPC
 **A.** Because macOS - like many things Apple - (unfortunately) has a very odd approach to security. You can try running `abletonrpc.py` without granting said permissions, but if you get any strange errors in stdout, it is likely a permissions issue.
 
 **Q.** Have you tested this with the latest version of Ableton Live?
-**A.** Yes, as of the time of this update, I have tested this with Ableton Live 12.3.2 Suite on macOS Tahoe 26.3. However, I have not tested this on Windows or Linux, so your mileage may vary.
+**A.** Yes, as of the time of this update, I have tested this with Ableton Live 12.3.2 Suite on macOS Tahoe 26.3.
 
 **Q.** Where do I contact you regarding questions about this project?
 
