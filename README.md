@@ -33,6 +33,7 @@ Click on `Select Ableton Live Bundle...` and point to your Ableton Live install.
 7. Open up Ableton Live, and set up the `FauxMIDI` device which will interface with `AbletonRPC` itself, as per the below screenshot.
 
 ![MIDI](https://i.ibb.co/9pbMpW1/Ableton-MIDIprefs.png)
+
 8. Enjoy!
 
 ## Instructions
