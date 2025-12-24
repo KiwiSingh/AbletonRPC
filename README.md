@@ -63,6 +63,8 @@ git clone https://github.com/KiwiSingh/AbletonRPC
 ```zsh
 git clone https://github.com/KiwiSingh/AbletonRPC
 ```
+Or just download the zip from GitHub and unzip in a directory of your choice (for use later).
+
 2. Create a new application on your Discord Developer Portal, and fill in the deets as per the screenshots below.
 
 ![1](https://i.ibb.co/PNfY9nD/Discord-Ded1.png)
