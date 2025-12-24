@@ -71,12 +71,16 @@ git clone https://github.com/KiwiSingh/AbletonRPC
 3. Download the latest release of the GUI from the Releases tab.
 4. Inside your Applications folder (or external drive, if you're a madlad who installed Ableton on an external SSD for some reason), right click `Ableton Live 12 Suite.app` and navigate to `/Applications/Ableton Live 12 Suite.app/Contents/App-Resources/MIDI Remote Scripts`.
 5. Inside the `MIDI Remote Scripts` folder paste the `FauxMIDI` folder from this repo.
-6. Open up `__init__.py` in your IDE or text editor and modify the `log_file_path = "/Volumes/Charidrive/rpctemp/CurrentProjectLog.txt"` line so that the value of `log_file_path` represents a path on your own system.
-7. Mount the DMG from the Releases tab
-8. Move AbletonRPC.app to your Applications folder
-9. Go through the setup flow (including your log directory and Discord client ID) and hit `Save & Start`.
-10. The GUI will exit (without any popup messages) and AbletonRPC will now run at startup for you.
-11. Enjoy!
+6. Open up Ableton Live, and set up the `FauxMIDI` device which will interface with your Discord application, as per the below screenshot.
+
+![MIDI](https://i.ibb.co/9pbMpW1/Ableton-MIDIprefs.png)
+
+7. Open up `__init__.py` in your IDE or text editor and modify the `log_file_path = "/Volumes/Charidrive/rpctemp/CurrentProjectLog.txt"` line so that the value of `log_file_path` represents a path on your own system.
+8. Mount the DMG from the Releases tab
+9. Move AbletonRPC.app to your Applications folder
+10. Go through the setup flow (including your log directory and Discord client ID) and hit `Save & Start`.
+11. The GUI will exit (without any popup messages) and AbletonRPC will now run at startup for you.
+12. Enjoy!
 
 **NOTE:** I am trying to make the GUI as painless as possible. In the future, if I can, I will make it so that the GUI safely patches your Ableton Live install FOR you (with the properly modified MIDI remote script), so that you don't have to do ANYTHING besides create an app on the Discord Developers Portal (I am looking into streamlining this as well).
 
