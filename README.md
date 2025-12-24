@@ -18,7 +18,7 @@ This experimental rich presence daemon involves making some rudimentary modifica
 5. Ableton Live 12 Suite ~~(this solution is hardcoded for 12 Suite; it may not work on 11 and below without some major modifications)~~
 6. A functioning brain 🧠
 
-### Using the GUI (for the less technically-inclined)
+### Using the GUI (for regular people)
 1. Download the latest release from the `Releases` section (v1.0.1 at the time of writing)
 2. Mount the DMG by double-clicking on the file from Finder or your browser.
 3. Move `AbletonRPC.app` to your `Applications` folder.
@@ -79,7 +79,7 @@ pip install -r requirements.txt
 13. Run `python abletonrpc.py` or `python3 abletonrpc.py`
 14. Enjoy!
 
-### Building from source
+### Building from source (for the tinkerers)
 1. Clone the repo
 2. Navigate to the `AbletonRPC-GUI` subdirectory
 3. Change the hardcoded client ID inside of `ableton_rpc.py` if you intend on using your own. Save the file.
