@@ -17,6 +17,7 @@ This experimental rich presence daemon involves making some rudimentary modifica
 4. An IDE or a text editor (if running from CLI or building from source)
 5. Ableton Live 12 Suite ~~(this solution is hardcoded for 12 Suite; it may not work on 11 and below without some major modifications)~~
 6. A functioning brain 🧠
+7. Python installed on your system (required!)
 
 ### Using the GUI (for regular people)
 1. Download the latest release from the `Releases` section (v1.0.1 at the time of writing)
