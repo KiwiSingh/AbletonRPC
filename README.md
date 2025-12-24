@@ -72,12 +72,13 @@ Install the reqs needed by `abletonrpc.py` using
 pip install -r requirements.txt
 ```
   
-    
+
+    
 10. Open up the `abletonrpc.py` and replace the placeholder in `client_id = "Your Client ID"  # Replace with your actual client ID` with your actual client ID.
 11. `chmod +x` the `abletonrpc.py` script
-12. Fire up Discord if you haven't already. Remove Invisible status if enabled
-13. Run `python abletonrpc.py` or `python3 abletonrpc.py`
-14. Enjoy!
+13. Fire up Discord if you haven't already. Remove Invisible status if enabled
+14. Run `python abletonrpc.py` or `python3 abletonrpc.py`
+15. Enjoy!
 
 ### Building from source (for the tinkerers)
 1. Clone the repo
@@ -92,7 +93,7 @@ pip install -r requirements.txt
 ```
 
 5. That's it! Now you will find the built app inside of the `dist` subdirectory.
-6. Go through the setup flow as described in steps 4 and 5 of the `Using the GUI` section.
+6. Go through the setup flow as described in steps 4 and 5 of the [Using the GUI](https://github.com/KiwiSingh/AbletonRPC/edit/main/README.md#using-the-gui-for-regular-people) section.
 7. Enjoy!
 
 
