@@ -15,22 +15,22 @@ This experimental rich presence daemon involves making some rudimentary modifica
 2. Any desktop (not WEB!) Discord client (preferably the official one, pls; let's keep it halal thanks 🙏)
 3. Account on the Discord Developer Portal (if running from CLI or building from source)
 4. An IDE or a text editor (if running from CLI or building from source)
-5. Ableton Live 12 Suite ~~(this solution is hardcoded for 12 Suite; it may not work on 11 and below without some major modifications)~~
+5. Ableton Live 11 or later (any edition)
 6. A functioning brain 🧠
-7. Python installed on your system (required!)
+
 
 ### Using the GUI (for regular people)
-1. Download the latest release from the `Releases` section (v1.0.1 at the time of writing)
+1. Download the latest release from the `Releases` section (v1.0.2 at the time of writing)
 2. Mount the DMG by double-clicking on the file from Finder or your browser.
 3. Move `AbletonRPC.app` to your `Applications` folder.
 4. Go through the setup flow
 
-![Setup flow](https://i.ibb.co/FLRvVKWk/Monosnap-Ableton-RPC-Setup-2025-12-24-12-12-56.png)
+![Setup flow](https://i.ibb.co/QFzHqV1B/Monosnap-Ableton-RPC-Setup-2025-12-24-15-30-34.png)
 
 Click on `Select Ableton Live Bundle...` and point to your Ableton Live install. Then click `Choose Save Location...` and point to a directory on your computer (or an external drive, as long as it's constantly connected) to log the current Ableton Live project name.
 
 5. Hit `Save & Start Presence`.
-6. That's it! The setup will quit without any annoying dialog boxes popping up, and `AbletonRPC` will automatically run at startup.
+6. That's it! The setup will pop up with a "Success" dialog box (which you can dismiss with the `Ok` button) and then the GUI will quit. `AbletonRPC` will now run at startup.
 7. Open up Ableton Live, and set up the `FauxMIDI` device which will interface with `AbletonRPC` itself, as per the below screenshot.
 
 ![MIDI](https://i.ibb.co/9pbMpW1/Ableton-MIDIprefs.png)
@@ -146,24 +146,17 @@ pip install -r requirements.txt
 **A.** Because macOS - like many things Apple - (unfortunately) has a very odd approach to security. You can try running `abletonrpc.py` without granting said permissions, but if you get any strange errors in stdout, it is likely a permissions issue.
 
 **Q.** Have you tested this with the latest version of Ableton Live?
+
 **A.** Yes, as of the time of this update, I have tested this with Ableton Live 12.3.2 Suite on macOS Tahoe 26.3.
 
 **Q.** I recently upgraded to Ableton Live 12.x.x Suite via the Rent-to-Own program, and the script no longer works! How do I make it work again??
-**A.** You have two options here:
-1. Copy over the `FauxMIDI` directory from inside of your existing Ableton Live install and into your new one (simplest but not tested btw).
-2. Run the following commands:
 
-```shell
-launchctl unload ~/Library/LaunchAgents/com.user.ableton-discord-rpc.plist 2>/dev/null
-pkill -9 -f "AbletonRPC"
-rm -rf ~/.config/ableton-discord-rpc/
-```
-
-inside of Terminal or your preferred terminal emulator (I use iTerm personally), and then re-run the setup flow from `AbletonRPC.app` from inside of your `Applications` folder.
+**A.** No problem at all! Although this should ideally not happen, in case it *does*, there is a solution. Just hit `Reset installation` inside of the GUI, then reopen it, and go through the setup flow again. 
 
 **Q.** I recently updated my Ableton install, and the presence is no longer working! What do I do?
-**A.** Worry not! Although this shouldn't happen, in the event that it does, you can just simply clone this repo, modify the `__init__.py` file so that it has the location of YOUR logs file (not the default) hardcoded into it. Then copy (not move) the `FauxMIDI` folder into your Ableton application bundle. Always keep a backup of your `FauxMIDI` folder in case this is something you are worried about!
+
+**A.** Please refer to the answer above.
 
 **Q.** Where do I contact you regarding questions about this project?
 
-**A.** You may reach out to my email address at [kiwisingh@proton.me](mailto:kiwisingh@proton.me)
+**A.** You may reach out to my email address at [kiwisingh@proton.me](mailto:kiwisingh@proton.me) or contact me on Discord (char1ot33r).
