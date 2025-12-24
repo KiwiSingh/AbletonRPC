@@ -78,7 +78,7 @@ Or just download the zip from GitHub and unzip in a directory of your choice (fo
 ![MIDI](https://i.ibb.co/9pbMpW1/Ableton-MIDIprefs.png)
 
 7. Open up `__init__.py` in your IDE or text editor and modify the `log_file_path = "/Volumes/Charidrive/rpctemp/CurrentProjectLog.txt"` line so that the value of `log_file_path` represents a path on your own system.
-8. Mount the DMG from the Releases tab
+8. Mount the DMG from the Releases tab (double-click on the file directly from your browser, or inside of Finder).
 9. Move AbletonRPC.app to your Applications folder
 10. Go through the setup flow (including your log directory and Discord client ID) and hit `Save & Start`.
 11. The GUI will exit (without any popup messages) and AbletonRPC will now run at startup for you.
