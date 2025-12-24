@@ -92,6 +92,7 @@ pip install -r requirements.txt
 chmod +x build_app.sh
 pip install -r requirements.txt
 ./build_app.sh
+touch dist/AbletonRPC.app
 ```
 
 5. That's it! Now you will find the built app inside of the `dist` subdirectory.
