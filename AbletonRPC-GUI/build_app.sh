@@ -91,6 +91,7 @@ else
     echo "   Run ./convert_icon.sh your_icon.png to create one"
 fi
 
+touch dist/AbletonRPC.app
 # Display build info
 echo ""
 echo -e "${GREEN}╔═══════════════════════════════════════════╗${NC}"
