@@ -23,14 +23,15 @@ This experimental rich presence daemon involves making some rudimentary modifica
 1. Download the latest release from the `Releases` section (v1.0.2 at the time of writing)
 2. Mount the DMG by double-clicking on the file from Finder or your browser.
 3. Move `AbletonRPC.app` to your `Applications` folder.
-4. Go through the setup flow
+4. Click on `Add installation` and then go through the setup flow.
 
-![Setup flow](https://i.ibb.co/QFzHqV1B/Monosnap-Ableton-RPC-Setup-2025-12-24-15-30-34.png)
+![Add installation](https://i.ibb.co/N2c18sM2/Monosnap-Ableton-RPC-Multi-Installation-Manager-2025-12-25-18-28-34.png)
+![Setup flow](https://i.ibb.co/bMvBCbmT/Monosnap-Add-Ableton-Installation-2025-12-25-18-30-21.png)
 
-Click on `Select Ableton Live Bundle...` and point to your Ableton Live install. Then click `Choose Save Location...` and point to a directory on your computer (or an external drive, as long as it's constantly connected) to log the current Ableton Live project name.
+Give your setup a name that you would remember. Then, click on `Select App.` and point to your Ableton Live install. Then click `Choose Location...` and point to a directory on your computer (or an external drive, as long as it's constantly connected) to log the current Ableton Live project name and create the log file. Use your own client ID (if you prefer creating the app for yourself on your Discord Developers Portal), or let the pre-filled one stay (it's mine).
 
-5. Hit `Save & Start Presence`.
-6. That's it! The setup will pop up with a "Success" dialog box (which you can dismiss with the `Ok` button) and then the GUI will quit. `AbletonRPC` will now run at startup.
+5. Hit `Add installation`.
+6. That's it! The setup will pop up with a success dialog box as well as further instructions. You may now close the GUI.
 7. Open up Ableton Live, and set up the `FauxMIDI` device which will interface with `AbletonRPC` itself, as per the below screenshot.
 
 ![MIDI](https://i.ibb.co/9pbMpW1/Ableton-MIDIprefs.png)
@@ -92,11 +93,10 @@ pip install -r requirements.txt
 chmod +x build_app.sh
 pip install -r requirements.txt
 ./build_app.sh
-touch dist/AbletonRPC.app
 ```
 
 5. That's it! Now you will find the built app inside of the `dist` subdirectory.
-6. Go through the setup flow as described in steps 4 and 5 of the [Using the GUI](https://github.com/KiwiSingh/AbletonRPC/edit/main/README.md#using-the-gui-for-regular-people) section.
+6. Go through the setup flow as described in steps 3 through 5 of the [Using the GUI](https://github.com/KiwiSingh/AbletonRPC/edit/main/README.md#using-the-gui-for-regular-people) section.
 7. Enjoy!
 
 
@@ -146,17 +146,31 @@ touch dist/AbletonRPC.app
 
 **A.** Because macOS - like many things Apple - (unfortunately) has a very odd approach to security. You can try running `abletonrpc.py` without granting said permissions, but if you get any strange errors in stdout, it is likely a permissions issue.
 
+
+
 **Q.** Have you tested this with the latest version of Ableton Live?
 
 **A.** Yes, as of the time of this update, I have tested this with Ableton Live 12.3.2 Suite on macOS Tahoe 26.3.
 
+
+
 **Q.** I recently upgraded to Ableton Live 12.x.x Suite via the Rent-to-Own program, and the script no longer works! How do I make it work again??
 
-**A.** No problem at all! Although this should ideally not happen, in case it *does*, there is a solution. Just hit `Reset installation` inside of the GUI, then reopen it, and go through the setup flow again. 
+**A.** No problem at all! Although this should ideally not happen, in case it *does*, there is a solution. Just open the GUI and go through the setup flow again!
+
+
 
 **Q.** I recently updated my Ableton install, and the presence is no longer working! What do I do?
 
 **A.** Please refer to the answer above.
+
+
+
+**Q.** I can't see the `Add installation` button in the popup window?
+
+**A.** This a known issue. Luckily, all you need to do is resize that window, and the button will show right up.
+
+
 
 **Q.** Where do I contact you regarding questions about this project?
 
