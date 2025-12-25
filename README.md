@@ -20,7 +20,7 @@ This experimental rich presence daemon involves making some rudimentary modifica
 
 
 ### Using the GUI (for regular people)
-1. Download the latest release from the `Releases` section (v1.0.2 at the time of writing)
+1. Download the latest release from the `Releases` section (v1.0.8 at the time of writing)
 2. Mount the DMG by double-clicking on the file from Finder or your browser.
 3. Move `AbletonRPC.app` to your `Applications` folder.
 4. Click on `Add installation` and then go through the setup flow.
