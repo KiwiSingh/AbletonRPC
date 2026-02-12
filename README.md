@@ -150,7 +150,7 @@ pip install -r requirements.txt
 
 **Q.** Have you tested this with the latest version of Ableton Live?
 
-**A.** Yes, as of the time of this update, I have tested this with Ableton Live 12.3.2 Suite on macOS Tahoe 26.3.
+**A.** Yes, as of the time of this update, I have tested this with Ableton Live 12.4b7 on macOS Tahoe 26.3 Release Candidate.
 
 
 
