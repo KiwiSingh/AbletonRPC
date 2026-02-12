@@ -1,164 +1,202 @@
 import os
 import time
-from pypresence import Presence  # type: ignore
-import psutil  # type: ignore
 import threading
+import psutil  # type: ignore
+from pypresence import Presence  # type: ignore
 
 # --- CONFIGURATION ---
-temp_file_path = "/Volumes/Charidrive/rpctemp/CurrentProjectLog.txt" # Replace with a desired path on your own machine
-client_id = "CLIENT_ID_HERE" # Replace with your own Discord Application Client ID
+temp_file_path = "/Volumes/Charidrive/rpctemp/CurrentProjectLog.txt"
+client_id = "CLIENT_ID_HERE"
 
 # --- CONNECT RPC ---
-RPC = Presence(client_id)
-try:
-    RPC.connect()
-    print("RPC Connected.")
-except Exception as e:
-    print(f"RPC Connection Error: {e}")
+def connect_rpc():
+    try:
+        rpc = Presence(client_id)
+        rpc.connect()
+        print("RPC Connected.")
+        return rpc
+    except Exception as e:
+        print(f"RPC Connection Error: {e}")
+        return None
+
+RPC = connect_rpc()
 
 # --- STRICT PROCESS CHECK ---
 def is_ableton_running():
     for proc in psutil.process_iter(['name']):
         try:
-            if proc.info['name']:
-                # macOS strict match
-                if proc.info['name'] == 'Live':
-                    return True
-                # Windows strict match
-                if proc.info['name'].startswith('Ableton Live'):
-                    return True
+            name = proc.info['name']
+            if not name:
+                continue
+            if name == 'Live':
+                return True
+            if name.startswith('Ableton Live'):
+                return True
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             pass
     return False
 
+
 def clear_log_file():
     try:
-        with open(temp_file_path, "w", encoding="utf-8") as file:
-            file.write("Current Project Name: \n")
-        print("Log file cleared (New session detected).")
+        with open(temp_file_path, "w", encoding="utf-8", buffering=1) as file:
+            file.write("")
+        print("Log file cleared.")
     except Exception as e:
         print(f"Error clearing log: {e}")
 
-# --- INITIALIZATION FIX ---
-# Check status immediately so we don't wipe data if Ableton is already open
+
+# --- INITIALIZATION ---
 ableton_was_running = is_ableton_running()
 
 if ableton_was_running:
-    print("Ableton is ALREADY running. preserving existing log file.")
+    print("Ableton already running — preserving log.")
 else:
-    print("Ableton is NOT running. Clearing log file.")
+    print("Ableton not running — clearing log.")
     clear_log_file()
 
-# Variable defaults
 last_modified_time = 0
-last_project_name = None
+last_payload = None
 start_time = int(time.time())
-broadcasting = True 
+broadcasting = True
 
-# --- THREADING ---
+
+# --- TOGGLE THREAD ---
 def toggle_broadcast():
-    global broadcasting
+    global broadcasting, RPC
     while True:
         user_input = input()
-        if user_input.lower() == 'toggle':
+        if user_input.lower() == "toggle":
             broadcasting = not broadcasting
             state = "enabled" if broadcasting else "disabled"
             print(f"Rich Presence {state}.")
-            if not broadcasting:
+            if not broadcasting and RPC:
                 RPC.clear()
 
 threading.Thread(target=toggle_broadcast, daemon=True).start()
 
 print("Monitoring loop started...")
 
+
+# --- SAFE FILE READ ---
+def safe_read_file(path):
+    if not os.path.exists(path):
+        return None
+
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return f.read()
+    except OSError:
+        # File replaced mid-read
+        time.sleep(0.2)
+        return None
+
+
 # --- MAIN LOOP ---
 while True:
     try:
+        if RPC is None:
+            RPC = connect_rpc()
+            time.sleep(3)
+            continue
+
         currently_running = is_ableton_running()
-        
-        # 1. HANDLE STATE CHANGES
+
+        # --- STATE TRANSITIONS ---
         if currently_running and not ableton_was_running:
-            # Ableton JUST started (Transition Off -> On)
             print("Ableton launch detected.")
-            # We clear the file here because it's a fresh boot, previous data is stale
             clear_log_file()
-            last_project_name = None
             start_time = int(time.time())
             ableton_was_running = True
 
         elif not currently_running and ableton_was_running:
-            # Ableton JUST closed (Transition On -> Off)
             print("Ableton closed.")
-            RPC.clear()
+            if RPC:
+                RPC.clear()
             ableton_was_running = False
             time.sleep(5)
             continue
-        
-        # If Ableton is not running at all, just wait
+
         if not currently_running:
             time.sleep(5)
             continue
 
-        # 2. READ FILE
-        if not os.path.exists(temp_file_path):
-            time.sleep(1)
-            continue
-
+        # --- READ FILE SAFELY ---
         try:
             file_mtime = os.path.getmtime(temp_file_path)
         except OSError:
+            time.sleep(1)
             continue
 
-        # Check if file updated OR if we just started the script (initial read)
-        # We add 'last_project_name is None' to force a read on script startup
-        if file_mtime != last_modified_time or last_project_name is None:
+        if file_mtime != last_modified_time:
             last_modified_time = file_mtime
-            time.sleep(0.1) # Debounce write
+            time.sleep(0.2)
 
-            try:
-                with open(temp_file_path, "r", encoding="utf-8") as file:
-                    content = file.read().strip()
-            except Exception:
+            content = safe_read_file(temp_file_path)
+            if not content:
                 continue
 
-            # Extract Name
-            new_project_name = ""
-            if "Current Project Name:" in content:
-                parts = content.split("Current Project Name:")
-                if len(parts) > 1:
-                    new_project_name = parts[1].strip()
+            content = content.strip()
 
-            print(f"Read from file: '{new_project_name}'")
+            project = "Unsaved Project"
+            tempo = None
+            state = None
 
-            # Update RPC if Changed
-            if new_project_name != last_project_name:
-                last_project_name = new_project_name
-                
-                # Only reset timer if the name actually changed to something valid
-                if new_project_name:
-                    start_time = int(time.time())
+            # --- Support structured format ---
+            lines = content.splitlines()
+            data = {}
 
-                if broadcasting:
-                    if new_project_name:
-                        RPC.update(
-                            state="Working on a project",
-                            details=new_project_name,
-                            large_image="ableton_image",
-                            large_text="Ableton Live",
-                            start=start_time
-                        )
-                    else:
-                        RPC.update(
-                            state="Not working on a project",
-                            details="Cooking up new music",
-                            large_image="ableton_image",
-                            large_text="Ableton Live"
-                        )
-        
+            for line in lines:
+                if ":" in line:
+                    k, v = line.split(":", 1)
+                    data[k.strip()] = v.strip()
+
+            if "PROJECT" in data:
+                project = data.get("PROJECT", project)
+                tempo = data.get("TEMPO")
+                state = data.get("STATE")
+            else:
+                # Fallback to old format
+                if "Current Project Name:" in content:
+                    parts = content.split("Current Project Name:")
+                    if len(parts) > 1:
+                        project = parts[1].strip()
+
+            payload = (project, tempo, state)
+
+            if payload != last_payload:
+                last_payload = payload
+
+                if broadcasting and RPC:
+                    try:
+                        if tempo and state:
+                            RPC.update(
+                                state=f"{state} · {tempo} BPM",
+                                details=project,
+                                large_image="ableton_image",
+                                large_text="Ableton Live",
+                                start=start_time
+                            )
+                        else:
+                            RPC.update(
+                                state="Working on a project",
+                                details=project,
+                                large_image="ableton_image",
+                                large_text="Ableton Live",
+                                start=start_time
+                            )
+
+                        print(f"Updated Discord → {project}")
+
+                    except Exception as e:
+                        print(f"RPC update error: {e}")
+                        RPC = None  # Force reconnect
+
         time.sleep(1)
 
     except KeyboardInterrupt:
         break
+
     except Exception as e:
-        print(f"Loop Error: {e}")
-        time.sleep(5)
+        print(f"Loop error: {e}")
+        time.sleep(3)

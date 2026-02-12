@@ -463,26 +463,38 @@ class AbletonRPCApp:
                     time.sleep(5)
                     continue
 
-                if running and os.path.exists(self.installation.log_path):
+                if running:
                     try:
+                        if not os.path.exists(self.installation.log_path):
+                            time.sleep(1)
+                            continue
+
                         mtime = os.path.getmtime(self.installation.log_path)
                         if mtime != self.last_modified_time:
                             self.last_modified_time = mtime
-                            time.sleep(0.5)
-                            
-                            with open(self.installation.log_path, "r", encoding="utf-8") as f:
-                                lines = f.read().splitlines()
-                                data = {}
-                                for line in lines:
-                                    if ":" in line:
-                                        k, v = line.split(":", 1)
-                                        data[k.strip()] = v.strip()
-                            
+                            time.sleep(0.3)
+
+                            try:
+                                with open(self.installation.log_path, "r", encoding="utf-8") as f:
+                                    content = f.read()
+                            except OSError:
+                                # File was replaced while reading
+                                time.sleep(0.5)
+                                continue
+
+                            lines = content.splitlines()
+                            data = {}
+
+                            for line in lines:
+                                if ":" in line:
+                                    k, v = line.split(":", 1)
+                                    data[k.strip()] = v.strip()
+
                             project = data.get("PROJECT", "Unsaved Project")
                             tempo = data.get("TEMPO", "120")
                             state = data.get("STATE", "Stopped")
                             installation_name = data.get("INSTALLATION", self.installation.name)
-                            
+
                             current_payload = (project, tempo, state)
 
                             if current_payload != self.last_data_payload and self.rpc:
@@ -494,6 +506,7 @@ class AbletonRPCApp:
                                     start=self.start_time
                                 )
                                 print(f"📡 Updated Discord: [{installation_name}] {project} | {state} | {tempo} BPM")
+
                     except Exception as e:
                         print(f"⚠️  Error reading log file: {e}")
                         
@@ -531,8 +544,8 @@ def run_multi_gui():
     header_frame = tk.Frame(root)
     header_frame.pack(fill=tk.X, padx=20, pady=10)
     
-    tk.Label(header_frame, text="Ableton Discord RPC v1.0.8", font=("Helvetica", 20, "bold")).pack()
-    tk.Label(header_frame, text="(Call An Ambulance, But Not For Me)", font=("Helvetica", 12), fg="blue").pack()
+    tk.Label(header_frame, text="Ableton Discord RPC v2.0.0", font=("Helvetica", 20, "bold")).pack()
+    tk.Label(header_frame, text="(No, YOU Lookin' Beta!)", font=("Helvetica", 12), fg="blue").pack()
     
     # Running versions detection
     detect_frame = tk.Frame(root)
