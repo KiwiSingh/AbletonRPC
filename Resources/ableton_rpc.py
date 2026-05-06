@@ -241,9 +241,17 @@ class FauxMIDI(ControlSurface):
             self._debug_log(f"Listener setup error: {e}")
 
     def _get_track_info(self):
-        """Return (track_name, track_type, device_name) for the currently selected track."""
+        """Return (track_name, track_type, device_name) for the currently selected track.
+
+        Device selection priority (v3.2.0):
+          - 0 devices  → None
+          - 1 device   → show it regardless of type
+          - 2 devices  → show the LAST one (first is usually the instrument, e.g. Serum)
+          - 3+ devices → show the currently focused device (user has explicitly selected something)
+        Device type codes: 0=AudioEffect, 1=Instrument, 2=MIDIEffect
+        """
         try:
-            view = self.song.view
+            view  = self.song.view
             track = getattr(view, "selected_track", None)
             if track is None:
                 return None, None, None
@@ -260,18 +268,36 @@ class FauxMIDI(ControlSurface):
             except Exception:
                 pass
 
-            # Selected device via track view
+            # Smart device selection
             device_name = None
             try:
-                track_view = getattr(track, "view", None)
-                selected_device = getattr(track_view, "selected_device", None) if track_view else None
-                if selected_device is None:
-                    # Fall back to selected_device on song view
-                    selected_device = getattr(view, "selected_device", None)
-                if selected_device:
-                    device_name = getattr(selected_device, "name", None) or None
-            except Exception:
-                pass
+                devices = list(getattr(track, "devices", []))
+                count   = len(devices)
+
+                if count == 0:
+                    chosen = None
+                elif count == 1:
+                    chosen = devices[0]
+                elif count == 2:
+                    # First slot is almost always the instrument — show the last one
+                    chosen = devices[-1]
+                else:
+                    # 3+ devices: show whatever the user has focused
+                    track_view      = getattr(track, "view", None)
+                    selected_device = getattr(track_view, "selected_device", None) if track_view else None
+                    if selected_device is None:
+                        selected_device = getattr(view, "selected_device", None)
+                    # If nothing is explicitly focused, fall back to last non-instrument device
+                    if selected_device is None:
+                        effects = [d for d in devices if getattr(d, "type", -1) != 1]
+                        chosen  = effects[-1] if effects else devices[-1]
+                    else:
+                        chosen = selected_device
+
+                if chosen is not None:
+                    device_name = getattr(chosen, "name", None) or None
+            except Exception as e:
+                self._debug_log(f"Device selection error: {e}")
 
             return track_name, track_type, device_name
         except Exception as e:

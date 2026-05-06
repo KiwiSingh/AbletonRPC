@@ -100,8 +100,8 @@ cat > AbletonRPC/Info.plist << 'PLIST'
 <key>CFBundleName</key><string>AbletonRPC</string>
 <key>CFBundleDisplayName</key><string>AbletonRPC</string>
 <key>CFBundleIdentifier</key><string>com.kiwi.AbletonRPC</string>
-<key>CFBundleVersion</key><string>3.1.0</string>
-<key>CFBundleShortVersionString</key><string>3.1.0</string>
+<key>CFBundleVersion</key><string>3.2.0</string>
+<key>CFBundleShortVersionString</key><string>3.2.0</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>
 <key>CFBundleIconFile</key><string>icon</string>
@@ -118,8 +118,8 @@ cat > AbletonRPCHelper/Info.plist << 'PLIST'
 <key>CFBundleName</key><string>AbletonRPCHelper</string>
 <key>CFBundleDisplayName</key><string>AbletonRPC Helper</string>
 <key>CFBundleIdentifier</key><string>com.kiwi.AbletonRPC.Helper</string>
-<key>CFBundleVersion</key><string>3.1.0</string>
-<key>CFBundleShortVersionString</key><string>3.1.0</string>
+<key>CFBundleVersion</key><string>3.2.0</string>
+<key>CFBundleShortVersionString</key><string>3.2.0</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>
 <key>NSPrincipalClass</key><string>NSApplication</string>

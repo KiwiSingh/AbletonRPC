@@ -112,9 +112,34 @@ AbletonRPC supports running multiple Ableton versions simultaneously (e.g. Live 
 
 ## Upgrading
 
+### Clearing stale daemons (do this after any upgrade)
+
+After installing a new version, old daemon processes from the previous session may still be running. If your rich presence stops updating after an upgrade, run this first:
+
+```bash
+pkill -f "ableton_rpc.py" 2>/dev/null
+rm -f ~/Library/Application\ Support/AbletonRPC/daemon-*.lock
+```
+
+The helper will automatically relaunch the correct daemons within a few seconds. You should then see one daemon process per configured installation:
+
+```bash
+ps aux | grep "ableton_rpc" | grep -v grep
+```
+
+### v3.1.0 → v3.2.0
+
+Drop-in upgrade — no reinstall required. Rebuild and install:
+
+```bash
+./build.sh --install
+```
+
+Then clear stale daemons as above. Re-add your installations in the GUI to get the updated FauxMIDI script with smarter device reporting.
+
 ### v3.0.0 → v3.1.0
 
-Drop-in upgrade — no reinstall required. Replace `ableton_rpc.py` in the bundle and restart the helper. To get track and device info in your presence, re-add your installations via the GUI so the updated FauxMIDI script gets reinstalled.
+Drop-in — replace `ableton_rpc.py` and rebuild. Clear stale daemons after installing. Re-add your installations to get the updated FauxMIDI script with track and device support.
 
 ### v1.x / v2.x → v3.x
 
@@ -177,6 +202,19 @@ No. FauxMIDI is a passive observer — it only reads song state. It does not sen
 **Q. My art assets aren't showing in Discord rich presence.**
 
 Discord takes 10–60 minutes to propagate newly uploaded assets from the Developer Portal. Don't re-upload — just wait.
+
+---
+
+**Q. The presence stopped working after updating AbletonRPC.**
+
+Stale daemon processes from the previous version are likely still running and blocking the new ones. Run:
+
+```bash
+pkill -f "ableton_rpc.py" 2>/dev/null
+rm -f ~/Library/Application\ Support/AbletonRPC/daemon-*.lock
+```
+
+The helper will relaunch everything automatically within a few seconds.
 
 ---
 

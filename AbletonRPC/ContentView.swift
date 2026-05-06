@@ -33,9 +33,9 @@ struct ContentView: View {
 
     private var header: some View {
         VStack(spacing: 2) {
-            Text("Ableton Discord RPC v3.1.0")
+            Text("Ableton Discord RPC v3.2.0")
                 .font(.system(size: 22, weight: .bold))
-            Text("One More Day")
+            Text("Only Myself Left To Conquer")
                 .font(.system(size: 13))
                 .foregroundColor(.accentColor)
         }

@@ -16,7 +16,7 @@ ok()   { echo -e "${GREEN}✓${NC} $*"; }
 warn() { echo -e "${YELLOW}⚠${NC}  $*"; }
 fail() { echo -e "${RED}✗${NC} $*"; exit 1; }
 
-VERSION="3.1.0"
+VERSION="3.2.0"
 APP_NAME="AbletonRPC"
 APP_PATH="build/Release/${APP_NAME}.app"
 DMG_NAME="${APP_NAME}-v${VERSION}.dmg"
