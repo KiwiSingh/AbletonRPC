@@ -54,11 +54,11 @@ cd AbletonRPC/AbletonRPC-GUI
 1. Open AbletonRPC from your Applications folder
 2. Click **Add Installation**
 
-   ![Add installation](https://i.ibb.co/N2c18sM2/Monosnap-Ableton-RPC-Multi-Installation-Manager-2025-12-25-18-28-34.png)
+   ![Add installation](AbletonRPCGUI.png)
 
 3. Give your installation a name, select your Ableton Live `.app` bundle, and choose a location for the log file (can be anywhere — an external drive works fine as long as it's connected when Ableton is running)
 
-   ![Setup flow](https://i.ibb.co/bMvBCbmT/Monosnap-Add-Ableton-Installation-2025-12-25-18-30-21.png)
+   ![Setup flow](Step2.png)
 
 4. Click **Add Installation** — AbletonRPC installs the FauxMIDI script and registers the background helper automatically
 5. Restart Ableton Live, then go to **Preferences → MIDI** and set `FauxMIDI` as a Control Surface
