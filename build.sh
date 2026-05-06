@@ -46,7 +46,27 @@ if ! command -v xcodegen &>/dev/null; then
 fi
 ok "xcodegen $(xcodegen --version 2>/dev/null | head -1)"
 
-# ── Icon conversion ───────────────────────────────────────────────────────
+# ── Python dependencies ───────────────────────────────────────────────────
+log "Checking Python dependencies..."
+PYTHON3="/usr/local/bin/python3"
+if ! command -v "$PYTHON3" &>/dev/null; then
+    PYTHON3="python3"
+fi
+
+MISSING=()
+while IFS='>=' read -r pkg _; do
+    [[ -z "$pkg" || "$pkg" == \#* ]] && continue
+    "$PYTHON3" -c "import $pkg" 2>/dev/null || MISSING+=("$pkg")
+done < requirements.txt
+
+if [ ${#MISSING[@]} -gt 0 ]; then
+    warn "Missing Python packages: ${MISSING[*]}"
+    log "Installing via pip..."
+    "$PYTHON3" -m pip install -r requirements.txt --quiet
+    ok "Python dependencies installed"
+else
+    ok "Python dependencies present"
+fi
 log "Checking for icon..."
 if [ -f "discord_icon.png" ]; then
     if [ ! -f "icon.icns" ] || [ "discord_icon.png" -nt "icon.icns" ]; then
@@ -136,7 +156,98 @@ if [ ! -d "$APP_PATH" ]; then
 fi
 ok "Build succeeded: $APP_PATH ($(du -sh "$APP_PATH" | cut -f1))"
 
-# ── Post-build fixups ─────────────────────────────────────────────────────
+# ── Bundle Python framework ───────────────────────────────────────────────
+log "Bundling Python runtime into app..."
+
+# Find the python.org Python framework
+PYTHON_BIN=$(command -v /usr/local/bin/python3.14 || \
+             command -v /usr/local/bin/python3 || \
+             echo "")
+
+if [ -z "$PYTHON_BIN" ]; then
+    warn "Could not find Python 3 — skipping bundling. Users will need Python installed."
+else
+    # Resolve the real executable (may be a symlink)
+    PYTHON_REAL=$(python3 -c "import sys; print(sys.executable)" 2>/dev/null || "$PYTHON_BIN" -c "import sys; print(sys.executable)")
+    PYTHON_VERSION=$("$PYTHON_BIN" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+
+    # Find the Python.framework root
+    FRAMEWORK_ROOT=$(echo "$PYTHON_REAL" | grep -o '.*/Python.framework' || true)
+
+    if [ -n "$FRAMEWORK_ROOT" ] && [ -d "$FRAMEWORK_ROOT" ]; then
+        BUNDLE_PYTHON_DIR="$APP_PATH/Contents/Resources/python"
+        mkdir -p "$BUNDLE_PYTHON_DIR"
+
+        log "Copying Python $PYTHON_VERSION framework (this may take a moment)..."
+
+        # Copy just the versioned framework — not the whole thing
+        VERSIONED="$FRAMEWORK_ROOT/Versions/$PYTHON_VERSION"
+        if [ -d "$VERSIONED" ]; then
+            # Copy bin, lib, include — skip .pyc caches and test suites to keep size down
+            rsync -a --quiet \
+                --exclude "*.pyc" \
+                --exclude "__pycache__" \
+                --exclude "test/" \
+                --exclude "tests/" \
+                --exclude "idle_test/" \
+                --exclude "*/test/*.py" \
+                --exclude "ensurepip/" \
+                --exclude "tkinter/" \
+                --exclude "turtledemo/" \
+                "$VERSIONED/bin/"     "$BUNDLE_PYTHON_DIR/bin/"
+            rsync -a --quiet \
+                --exclude "*.pyc" \
+                --exclude "__pycache__" \
+                --exclude "test/" \
+                --exclude "tests/" \
+                --exclude "config-*/" \
+                "$VERSIONED/lib/python${PYTHON_VERSION}/" \
+                "$BUNDLE_PYTHON_DIR/lib/python${PYTHON_VERSION}/"
+
+            # Copy the Python shared library itself
+            cp -f "$VERSIONED/Python" "$BUNDLE_PYTHON_DIR/" 2>/dev/null || \
+            cp -f "$VERSIONED/lib/libpython${PYTHON_VERSION}.dylib" "$BUNDLE_PYTHON_DIR/" 2>/dev/null || true
+
+            # Install required packages into the bundled Python's site-packages
+            BUNDLED_PIP="$BUNDLE_PYTHON_DIR/bin/pip3"
+            BUNDLED_SITE="$BUNDLE_PYTHON_DIR/lib/python${PYTHON_VERSION}/site-packages"
+            mkdir -p "$BUNDLED_SITE"
+
+            if [ -f "$BUNDLED_PIP" ]; then
+                log "Installing pypresence and psutil into bundled Python..."
+                "$BUNDLE_PYTHON_DIR/bin/python3" -m pip install \
+                    pypresence psutil \
+                    --target "$BUNDLED_SITE" \
+                    --quiet --no-warn-script-location 2>/dev/null || \
+                "$PYTHON_BIN" -m pip install \
+                    pypresence psutil \
+                    --target "$BUNDLED_SITE" \
+                    --quiet 2>/dev/null || true
+            else
+                # pip not in bundle — install packages directly to target
+                "$PYTHON_BIN" -m pip install \
+                    pypresence psutil \
+                    --target "$BUNDLED_SITE" \
+                    --quiet 2>/dev/null || true
+            fi
+
+            ok "Python $PYTHON_VERSION bundled ($(du -sh "$BUNDLE_PYTHON_DIR" | cut -f1))"
+        else
+            warn "Could not find versioned framework at $VERSIONED — skipping"
+        fi
+    else
+        # No framework found (e.g. Homebrew Python) — copy just the binary + packages
+        warn "Python.framework not found — bundling binary + packages only"
+        BUNDLE_PYTHON_DIR="$APP_PATH/Contents/Resources/python"
+        mkdir -p "$BUNDLE_PYTHON_DIR/bin" "$BUNDLE_PYTHON_DIR/lib/site-packages"
+        cp -f "$PYTHON_REAL" "$BUNDLE_PYTHON_DIR/bin/python3"
+        "$PYTHON_BIN" -m pip install \
+            pypresence psutil \
+            --target "$BUNDLE_PYTHON_DIR/lib/site-packages" \
+            --quiet 2>/dev/null || true
+        ok "Python binary + packages bundled"
+    fi
+fi
 log "Running post-build fixups..."
 
 # 1. Move helper from Resources/ to Library/LoginItems/ where it belongs

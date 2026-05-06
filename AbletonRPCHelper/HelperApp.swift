@@ -83,6 +83,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Helpers
 
     private func bestPython() -> String {
+        // Prefer the Python bundled inside our own app bundle
+        let helperBundle = Bundle.main.bundleURL
+        let mainAppBundle = helperBundle
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let bundledPython = mainAppBundle
+            .appendingPathComponent("Contents/Resources/python/bin/python3")
+            .path
+        if FileManager.default.isExecutableFile(atPath: bundledPython) {
+            return bundledPython
+        }
+        // Fall back to system Python
         let candidates = [
             "/usr/local/bin/python3.14",
             "/usr/local/bin/python3",

@@ -6,18 +6,9 @@
 
 Unofficial Ableton Live Discord rich presence for macOS — now powered by a native Swift app.
 
-
-### Main GUI
+## Main UI
 
 ![Main GUI](AbletonRPCGUI.png)
-
-### Setup Flow
-
-![Setup Flow](https://i.ibb.co/5xXj19c/Monosnap-Add-Ableton-Installation-2025-12-25-18-30-21.png)
-
-### MIDI Preferences
-
-![MIDI Preferences](https://i.ibb.co/9pbMpW1/Ableton-MIDIprefs.png)
 
 ## Disclaimer
 
@@ -32,7 +23,8 @@ Do not seek support for AbletonRPC in Ableton's official Discord or support chan
 - macOS 13 Ventura or later (tested on macOS 26 Tahoe)
 - Ableton Live 11 or later (any edition)
 - Discord desktop client (not the web app) — official client or Vesktop both work
-- Python 3.10 or later from [python.org](https://www.python.org/downloads/) (not the system Python)
+
+Python is bundled inside the app — no separate installation required.
 
 ---
 
@@ -111,7 +103,7 @@ For those who prefer running the daemon directly:
 
 ```bash
 cd AbletonRPC-GUI
-pip install pypresence psutil
+pip install -r requirements.txt
 python3 Resources/ableton_rpc.py --daemon
 ```
 

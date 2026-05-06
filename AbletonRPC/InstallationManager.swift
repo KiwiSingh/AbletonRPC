@@ -54,6 +54,11 @@ class InstallationManager: ObservableObject {
     }
 
     static var pythonPath: String {
+        // Prefer the Python bundled inside our app bundle
+        if let bundled = Bundle.main.url(forResource: "python/bin/python3", withExtension: nil),
+           FileManager.default.isExecutableFile(atPath: bundled.path) {
+            return bundled.path
+        }
         let candidates = [
             "/usr/local/bin/python3.14",
             "/usr/local/bin/python3",
