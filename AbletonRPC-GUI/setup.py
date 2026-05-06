@@ -9,12 +9,12 @@ OPTIONS = {
         'CFBundleDisplayName': 'AbletonRPC',
         'CFBundleExecutable': 'AbletonRPC', 
         'CFBundleIdentifier': "com.user.ableton-rpc",
-        'CFBundleVersion': "2.0.0",
-        'CFBundleShortVersionString': "2.0.0",
+        'CFBundleVersion': "2.0.1",
+        'CFBundleShortVersionString': "2.0.1",
         'LSUIElement': False, 
     },
     'packages': ['pypresence', 'psutil', 'tkinter'],
-    'includes': ['tkinter', 'tkinter.filedialog', 'tkinter.messagebox', 'shutil', 'pathlib', 'subprocess', 'glob'],
+    'includes': ['tkinter', 'tkinter.filedialog', 'tkinter.messagebox', 'shutil', 'pathlib', 'subprocess', 'glob', 'tempfile'],
 }
 
 setup(

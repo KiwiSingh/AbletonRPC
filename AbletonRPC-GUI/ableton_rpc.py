@@ -6,10 +6,107 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from pathlib import Path
 from pypresence import Presence # type: ignore
+from pypresence.utils import get_ipc_path # type: ignore
 import subprocess
 import shutil
 import json
 import hashlib
+import glob
+import tempfile
+
+# ---------------------------------------------------------------------------
+# Vesktop / alternative Discord client IPC socket hunter
+# ---------------------------------------------------------------------------
+# pypresence only searches $TMPDIR and /tmp for discord-ipc-{0..9}.
+# Vesktop (and WebCord, Legcord, etc.) on macOS places its socket in a
+# non-standard location that pypresence misses.  We override get_ipc_path
+# inside a thin Presence subclass so the rest of the code is unaffected.
+
+def _find_discord_ipc_socket():
+    """
+    Return the first usable Discord IPC socket path, checking every location
+    that stock Discord, Vesktop, and other alt-clients are known to use on macOS.
+    Returns None if nothing is found.
+    """
+    # Build the full candidate list
+    candidate_dirs = []
+
+    # 1. pypresence's own default logic (handles $TMPDIR / /tmp for stock Discord)
+    for i in range(10):
+        try:
+            p = get_ipc_path(i)
+            if p:
+                candidate_dirs.append(os.path.dirname(p))
+        except Exception:
+            pass
+
+    # 2. macOS $TMPDIR (often /var/folders/…/…/T/)
+    tmpdir = os.environ.get("TMPDIR", tempfile.gettempdir())
+    candidate_dirs.append(tmpdir)
+
+    # 3. Vesktop on macOS writes its socket into a snap-style subdirectory
+    #    inside $TMPDIR, e.g. $TMPDIR/snap.discord/ or $TMPDIR/app.vesktop/
+    for pattern in ("snap.discord", "app.vesktop", "vesktop", "discord", "legcord", "webcord"):
+        candidate_dirs.append(os.path.join(tmpdir, pattern))
+
+    # 4. XDG_RUNTIME_DIR (Linux / some Vesktop builds)
+    xdg = os.environ.get("XDG_RUNTIME_DIR", "")
+    if xdg:
+        candidate_dirs.append(xdg)
+        for pattern in ("snap.discord", "app.vesktop", "vesktop", "discord"):
+            candidate_dirs.append(os.path.join(xdg, pattern))
+
+    # Deduplicate while preserving order
+    seen = set()
+    unique_dirs = []
+    for d in candidate_dirs:
+        if d not in seen:
+            seen.add(d)
+            unique_dirs.append(d)
+
+    # Search each directory for discord-ipc-0 … discord-ipc-9
+    for directory in unique_dirs:
+        for i in range(10):
+            path = os.path.join(directory, f"discord-ipc-{i}")
+            if os.path.exists(path):
+                return path
+
+    return None
+
+
+class BroadPresence(Presence):
+    """
+    Presence subclass that falls back to a broad IPC socket search so it works
+    with Vesktop, Legcord, WebCord, and stock Discord on macOS.
+    """
+
+    def connect(self):
+        # Let pypresence try its normal path first
+        try:
+            return super().connect()
+        except Exception as primary_err:
+            pass
+
+        # Primary failed – try our extended search
+        socket_path = _find_discord_ipc_socket()
+        if socket_path is None:
+            raise ConnectionError(
+                "Could not find a Discord IPC socket. "
+                "Make sure Discord / Vesktop is running."
+            ) from None
+
+        # Monkey-patch the pipe path pypresence will use and retry
+        import pypresence.connection as _conn  # type: ignore
+        original_get = _conn.get_ipc_path
+
+        def _patched_get(pipe=0):
+            return socket_path
+
+        _conn.get_ipc_path = _patched_get
+        try:
+            return super().connect()
+        finally:
+            _conn.get_ipc_path = original_get
 
 # --- GLOBAL SETTINGS ---
 DEFAULT_CLIENT_ID = "1283406074824753203" 
@@ -429,7 +526,7 @@ class AbletonRPCApp:
         print(f"🔧 Service: {self.installation.service_name}")
         
         try:
-            self.rpc = Presence(self.installation.client_id)
+            self.rpc = BroadPresence(self.installation.client_id)
             self.rpc.connect()
             print("✅ Connected to Discord RPC")
         except Exception as e:
@@ -440,7 +537,7 @@ class AbletonRPCApp:
             try:
                 if not self.rpc:
                     try: 
-                        self.rpc = Presence(self.installation.client_id)
+                        self.rpc = BroadPresence(self.installation.client_id)
                         self.rpc.connect()
                         print("✅ Reconnected to Discord RPC")
                     except Exception as e:
@@ -544,8 +641,8 @@ def run_multi_gui():
     header_frame = tk.Frame(root)
     header_frame.pack(fill=tk.X, padx=20, pady=10)
     
-    tk.Label(header_frame, text="Ableton Discord RPC v2.0.0", font=("Helvetica", 20, "bold")).pack()
-    tk.Label(header_frame, text="(No, YOU Lookin' Beta!)", font=("Helvetica", 12), fg="blue").pack()
+    tk.Label(header_frame, text="Ableton Discord RPC v2.0.1", font=("Helvetica", 20, "bold")).pack()
+    tk.Label(header_frame, text="Brand New Day", font=("Helvetica", 12), fg="blue").pack()
     
     # Running versions detection
     detect_frame = tk.Frame(root)
@@ -621,8 +718,21 @@ def run_multi_gui():
         tk.Label(add_window, text="Ableton Live Application:", font=("Helvetica", 11, "bold")).pack(anchor="w", padx=40, pady=(15,0))
         ableton_var = tk.StringVar()
         tk.Entry(add_window, textvariable=ableton_var, width=50).pack(pady=5)
-        tk.Button(add_window, text="Select App...", 
-                 command=lambda: ableton_var.set(filedialog.askopenfilename(filetypes=[("macOS Application", "*.app")]))).pack()
+        def pick_ableton_app():
+            path = filedialog.askdirectory(
+                title="Select Ableton Live .app bundle",
+                initialdir="/Applications",
+            )
+            if path:
+                if not path.endswith(".app"):
+                    messagebox.showerror(
+                        "Invalid Selection",
+                        "Please select an .app bundle (e.g. 'Ableton Live 12 Suite.app').",
+                    )
+                    return
+                ableton_var.set(path)
+
+        tk.Button(add_window, text="Select App...", command=pick_ableton_app).pack()
         
         # Log path
         tk.Label(add_window, text="Log File Location:", font=("Helvetica", 11, "bold")).pack(anchor="w", padx=40, pady=(15,0))

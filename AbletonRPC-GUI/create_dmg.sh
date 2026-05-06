@@ -20,8 +20,8 @@ echo ""
 # Configuration
 APP_NAME="AbletonRPC"
 APP_PATH="dist/${APP_NAME}.app"
-DMG_NAME="${APP_NAME}-v2.0.0.dmg"
-VERSION="2.0.0"
+DMG_NAME="${APP_NAME}-v2.0.1.dmg"
+VERSION="2.0.1"
 
 # Check if app exists
 if [ ! -d "$APP_PATH" ]; then
