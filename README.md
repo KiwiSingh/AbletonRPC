@@ -1,177 +1,193 @@
 # AbletonRPC
+
 <p align="center">
-  <img src="https://i.ibb.co/V9NbLcY/ableton-image-beeg.png" alt="AbletonRPC logo">
+  <img src="https://i.ibb.co/V9NbLcY/ableton-image-beeg.png" alt="AbletonRPC logo">
 </p>
 
-
-Unofficial Ableton Live Discord rich presence for macOS
-
-## DISCLAIMER 
-This experimental rich presence daemon involves making some rudimentary modifications to your Ableton Live installation. On macOS, applications are actually directories, with a runner to execute any code - along with the assets needed to execute said code - inside that directory. The modifications `AbletonRPC` makes to your Ableton installation are rudimentary, safe, and do not carry any risks of an Ableton account ban or license revocation. However, if you are not comfortable with these modifications, please stop here. Please do not ask for any support regarding `AbletonRPC` in the Ableton Discord or on official support channels. This rich presence project is UNOFFICIAL, and is not associated with Ableton (the company) in any way, shape, or form.
-
-## Stuff needed
-
-1. Existing Discord account
-2. Any desktop (not WEB!) Discord client (preferably the official one, pls; let's keep it halal thanks 🙏)
-3. Account on the Discord Developer Portal (if running from CLI or building from source)
-4. An IDE or a text editor (if running from CLI or building from source)
-5. Ableton Live 11 or later (any edition)
-6. A functioning brain 🧠
+Unofficial Ableton Live Discord rich presence for macOS — now powered by a native Swift app.
 
 
-### Using the GUI (for regular people)
-1. Download the latest release from the `Releases` section (v1.0.8 at the time of writing)
-2. Mount the DMG by double-clicking on the file from Finder or your browser.
-3. Move `AbletonRPC.app` to your `Applications` folder.
-4. Click on `Add installation` and then go through the setup flow.
+### Main GUI
 
-![Add installation](https://i.ibb.co/N2c18sM2/Monosnap-Ableton-RPC-Multi-Installation-Manager-2025-12-25-18-28-34.png)
-![Setup flow](https://i.ibb.co/bMvBCbmT/Monosnap-Add-Ableton-Installation-2025-12-25-18-30-21.png)
+![Main GUI](AbletonRPCGUI.png)
 
-Give your setup a name that you would remember. Then, click on `Select App.` and point to your Ableton Live install. Then click `Choose Location...` and point to a directory on your computer (or an external drive, as long as it's constantly connected) to log the current Ableton Live project name and create the log file. Use your own client ID (if you prefer creating the app for yourself on your Discord Developers Portal), or let the pre-filled one stay (it's mine).
+### Setup Flow
 
-5. Hit `Add installation`.
-6. That's it! The setup will pop up with a success dialog box as well as further instructions. You may now close the GUI.
-7. Open up Ableton Live, and set up the `FauxMIDI` device which will interface with `AbletonRPC` itself, as per the below screenshot.
+![Setup Flow](https://i.ibb.co/5xXj19c/Monosnap-Add-Ableton-Installation-2025-12-25-18-30-21.png)
 
-![MIDI](https://i.ibb.co/9pbMpW1/Ableton-MIDIprefs.png)
+### MIDI Preferences
 
-8. Enjoy!
+![MIDI Preferences](https://i.ibb.co/9pbMpW1/Ableton-MIDIprefs.png)
 
-## Instructions
-### **Running from CLI (for expert users)**
-1. Clone this repo using 
+## Disclaimer
 
-```zsh
+AbletonRPC installs a small MIDI Remote Script (`FauxMIDI`) inside your Ableton Live application bundle. This modification is read-only from Ableton's perspective, does not touch any project files or preferences, and carries no risk of account ban or license revocation. That said, if you are not comfortable with it, stop here. This project is **unofficial** and is not affiliated with Ableton AG in any way.
+
+Do not seek support for AbletonRPC in Ableton's official Discord or support channels.
+
+---
+
+## Requirements
+
+- macOS 13 Ventura or later (tested on macOS 26 Tahoe)
+- Ableton Live 11 or later (any edition)
+- Discord desktop client (not the web app) — official client or Vesktop both work
+- Python 3.10 or later from [python.org](https://www.python.org/downloads/) (not the system Python)
+
+---
+
+## Installation
+
+### Using the pre-built app (recommended)
+
+1. Download the latest release from the [Releases](https://github.com/KiwiSingh/AbletonRPC/releases) page
+2. Unzip and move `AbletonRPC.app` to your Applications folder
+3. Right-click → Open on first launch to bypass Gatekeeper
+4. Click **Add Installation** and follow the setup flow
+
+### Building from source
+
+```bash
 git clone https://github.com/KiwiSingh/AbletonRPC
+cd AbletonRPC/AbletonRPC-GUI
+./build.sh --install
 ```
 
-2. Create a new application on your Discord Developer Portal, and fill in the deets as per the screenshots below.
+`build.sh` handles everything: installs `xcodegen` via Homebrew, generates the Xcode project, builds the app, and copies it to `/Applications`. Xcode must be installed (Command Line Tools alone are not enough).
 
-![1](https://i.ibb.co/PNfY9nD/Discord-Ded1.png)
-![2](https://i.ibb.co/gMfKK06/Discord-Ded2.png)
+---
 
-3. Close Ableton Live in case it is open (obv. save any unsaved projects first)
-4. Inside your Applications folder (or external drive, if you're a madlad who installed Ableton on an external SSD for some reason), right click `Ableton Live 12 Suite.app` and navigate to `/Applications/Ableton Live 12 Suite.app/Contents/App-Resources/MIDI Remote Scripts`.
-5. Inside the `MIDI Remote Scripts` folder paste the `FauxMIDI` folder from this repo.
-6. Open up `__init__.py` in your IDE and modify the `log_file_path = "/Volumes/Charidrive/rpctemp/CurrentProjectLog.txt"` line so that the value of `log_file_path` represents a path on your own system.
+## Setup flow
 
-      6a. In case the script throws any errors in stdout when run, create a blank `CurrentProjectLog.txt` file (inside the directory that `log_file_path` points to obviously).
-      
-7. Inside of Terminal, navigate to the `FauxMIDI` folder and give read, write and execute permissions to the MIDI remote script. `chmod +rwx` the entire directory if needed.
-8. Open up Ableton Live, and set up the `FauxMIDI` device which will interface with your Discord application, as per the below screenshot.
+1. Open AbletonRPC from your Applications folder
+2. Click **Add Installation**
 
-![MIDI](https://i.ibb.co/9pbMpW1/Ableton-MIDIprefs.png)
+   ![Add installation](https://i.ibb.co/N2c18sM2/Monosnap-Ableton-RPC-Multi-Installation-Manager-2025-12-25-18-28-34.png)
 
-9. Create a new Python 3 virtual environment so that you don't bork up your existing install.
+3. Give your installation a name, select your Ableton Live `.app` bundle, and choose a location for the log file (can be anywhere — an external drive works fine as long as it's connected when Ableton is running)
 
-```zsh
-python3 -m venv rpc
-source rpc/bin/activate
+   ![Setup flow](https://i.ibb.co/bMvBCbmT/Monosnap-Add-Ableton-Installation-2025-12-25-18-30-21.png)
+
+4. Click **Add Installation** — AbletonRPC installs the FauxMIDI script and registers the background helper automatically
+5. Restart Ableton Live, then go to **Preferences → MIDI** and set `FauxMIDI` as a Control Surface
+
+   ![MIDI preferences](https://i.ibb.co/9pbMpW1/Ableton-MIDIprefs.png)
+
+6. Open Discord and start a session in Ableton — your rich presence will update automatically
+
+---
+
+## How it works
+
+```
+macOS Login
+  ↓
+AbletonRPC Helper starts (via LaunchAgent)
+  ↓
+Helper launches Python daemon with correct environment
+  ↓
+Daemon reads ~/Library/Application Support/AbletonRPC/installations.json
+  ↓
+One monitoring thread per Ableton installation
+  ↓
+FauxMIDI writes project name, tempo, and state to a log file
+  ↓
+Daemon reads log file → updates Discord Rich Presence via pypresence
 ```
 
-Install the reqs needed by `abletonrpc.py` using
-```
-pip install -r requirements.txt
-```
-  
+The helper is a native Swift app that manages the Python daemon's lifecycle — restarting it on crash and ensuring it always runs with the correct environment variables. This replaces the fragile `launchctl` approach used in v1/v2.
 
-    
-10. Open up the `abletonrpc.py` and replace the placeholder in `client_id = "Your Client ID"  # Replace with your actual client ID` with your actual client ID.
-11. `chmod +x` the `abletonrpc.py` script
-13. Fire up Discord if you haven't already. Remove Invisible status if enabled
-14. Run `python abletonrpc.py` or `python3 abletonrpc.py`
-15. Enjoy!
+---
 
-### Building from source (for the tinkerers)
-1. Clone the repo
-2. Navigate to the `AbletonRPC-GUI` subdirectory
-3. Change the hardcoded client ID inside of `ableton_rpc.py` if you intend on using your own. Save the file.
-4. Run the following commands:
+## Multiple installations
 
-```shell
-chmod +x build_app.sh
-pip install -r requirements.txt
-./build_app.sh
+AbletonRPC supports running multiple Ableton versions simultaneously (e.g. Live 11 and Live 12). Each installation gets its own monitoring thread and log file. Discord will always show the version that is actively playing or recording.
+
+---
+
+## CLI usage
+
+For those who prefer running the daemon directly:
+
+```bash
+cd AbletonRPC-GUI
+pip install pypresence psutil
+python3 Resources/ableton_rpc.py --daemon
 ```
 
-5. That's it! Now you will find the built app inside of the `dist` subdirectory.
-6. Go through the setup flow as described in steps 3 through 5 of the [Using the GUI](https://github.com/KiwiSingh/AbletonRPC/edit/main/README.md#using-the-gui-for-regular-people) section.
-7. Enjoy!
+The daemon reads from `~/Library/Application Support/AbletonRPC/installations.json`. Add installations via the GUI first, then run the daemon from the CLI if preferred.
 
+---
+
+## Vesktop / alt-client support
+
+AbletonRPC includes a custom IPC socket hunter (`BroadPresence`) that searches non-standard socket locations used by Vesktop, Legcord, WebCord, and other alternative Discord clients — in addition to the standard locations used by the official client.
+
+---
 
 ## Frequently asked questions
-**Q.** Is this a port of [DAWRPC](https://github.com/Serena1432/DAWRPC)?
 
-**A.** No, it is not. I initially wanted to make a port of DAWRPC, but since I only have Ableton Live and Studio One (and GarageBand technically) to experiment with, not to mention the fact that I would have to effectively reverse engineer a ton of Windows DLLs and f*ck around in C#, I dropped the idea entirely (at least for the timebeing).
+**Q. Is this a port of [DAWRPC](https://github.com/Serena1432/DAWRPC)?**
 
+No. Completely independent project built from scratch for macOS.
 
-**Q.** I get a `ModuleNotFound` error. Help!
+---
 
-**A.** This is most likely because you have not correctly initialized a virtual environment. Restart your shell if you have already installed all requirements, and reactivate the virtual environment using `source venv/bin/activate` if needed (replace `venv` with the name of your actual virtual environment obviously; in my case it is called `RPC`).
+**Q. Will this mess up my Ableton installation?**
 
+No. AbletonRPC only adds a `FauxMIDI` folder to Ableton's MIDI Remote Scripts directory. It does not modify any existing files. Removing the installation via the GUI cleans it up completely.
 
+---
 
-**Q.** VS Code won't let me edit your Python script!
+**Q. Will this affect my existing MIDI controllers or mappings?**
 
-**A.** Refer to the answer above.
+No. FauxMIDI is a passive observer — it only reads song state. It does not send or receive MIDI data and does not interfere with Push, MPK Mini, AKAI Fire, or any other controller.
 
+---
 
+**Q. My art assets aren't showing in Discord rich presence.**
 
-**Q.** Can I make a Discord bot/plugin/other self-hosted instance using this?
+Discord takes 10–60 minutes to propagate newly uploaded assets from the Developer Portal. Don't re-upload — just wait.
 
-**A.** Sure. Go crazy. It's FOSS. Though please note that I do not condone using modified Discord clients, and if you end up getting into any trouble because of a plugin/self-bot, I am not liable. But since this project is FOSS, I cannot stop anyone from forking it and doing with it as they please.
+---
 
+**Q. The presence stopped working after I updated Ableton.**
 
+Ableton updates sometimes replace the MIDI Remote Scripts folder. Open the AbletonRPC GUI, remove the installation, and add it again to reinstall FauxMIDI.
 
-**Q.** Is this safe? Will I mess up my Ableton install?
+---
 
-**A.** If you know what you're doing, this is completely safe. If you do not feel comfortable with such an involved solution, please look elsewhere.
+**Q. I upgraded Ableton via Rent-to-Own and the presence broke.**
 
+Same fix as above — remove and re-add the installation in the GUI.
 
+---
 
-**Q.** My art assets don't show up in my Discord rich presence?
+**Q. What Python version do I need?**
 
-**A.** Please be patient! Your assets will take a while (10 minutes to an hour) to reflect on your Discord Developer Portal once uploaded, so please don't upload the same assets again and again, as this will cause issues with the script (due to ambiguous key-value pairing). Once they show up in your Developer Portal, you should be good to go with the `abletonrpc.py` script.
+Python 3.10 or later from [python.org](https://www.python.org/downloads/). The system Python (`/usr/bin/python3`) that ships with macOS is too old and has a broken Tk version. AbletonRPC will use `/usr/local/bin/python3` by default.
 
+---
 
+**Q. Is this safe to use with Vesktop?**
 
-**Q.** I see that you've used a MIDI remote script. Will this mess up my existing MIDI mappings for my MPK Mini/AKAI Fire/Ableton Push/ATOM SQ/other MIDI controller?
+Yes. See [Vesktop / alt-client support](#vesktop--alt-client-support) above.
 
-**A.** No. The `FauxMIDI` device is only there to interface with the application you create on your Discord Developer Portal (or with mine if you use the GUI). It neither interferes with your existing MIDI mappings, nor interacts with any stock Ableton plugins/external VST instruments.
+---
 
+**Q. Have you tested this with the latest Ableton version?**
 
+Yes — tested with Ableton Live 12.4 Suite on macOS 26 Tahoe.
 
-**Q.** Why give so many permissions to the `__init.py__` and `abletonrpc.py` scripts?
+---
 
-**A.** Because macOS - like many things Apple - (unfortunately) has a very odd approach to security. You can try running `abletonrpc.py` without granting said permissions, but if you get any strange errors in stdout, it is likely a permissions issue.
+**Q. Can I use my own Discord application / client ID?**
 
+Yes. When adding an installation, replace the pre-filled Client ID with your own from the [Discord Developer Portal](https://discord.com/developers/applications). Make sure to upload your art assets there too.
 
+---
 
-**Q.** Have you tested this with the latest version of Ableton Live?
+**Q. Where can I reach you?**
 
-**A.** Yes, as of the time of this update, I have tested this with Ableton Live 12.4b7 on macOS Tahoe 26.3 Release Candidate.
-
-
-
-**Q.** I recently upgraded to Ableton Live 12.x.x Suite via the Rent-to-Own program, and the script no longer works! How do I make it work again??
-
-**A.** No problem at all! Although this should ideally not happen, in case it *does*, there is a solution. Just open the GUI and go through the setup flow again!
-
-
-
-**Q.** I recently updated my Ableton install, and the presence is no longer working! What do I do?
-
-**A.** Please refer to the answer above.
-
-
-
-**Q.** I can't see the `Add installation` button in the popup window?
-
-**A.** This a known issue. Luckily, all you need to do is resize that window, and the button will show right up.
-
-
-
-**Q.** Where do I contact you regarding questions about this project?
-
-**A.** You may reach out to my email address at [kiwisingh@proton.me](mailto:kiwisingh@proton.me) or contact me on Discord (char1ot33r).
+Email: [kiwisingh@proton.me](mailto:kiwisingh@proton.me)  
+Discord: `char1ot33r`

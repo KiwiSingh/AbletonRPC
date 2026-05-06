@@ -1,0 +1,446 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		02F54799601192EC82094076 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EE46819F71280ED96F15175 /* Models.swift */; };
+		641E76772D8D5CB51DEFCE3A /* AbletonRPCApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA2FE2DA59A175DAAB92FAF5 /* AbletonRPCApp.swift */; };
+		66F53EE43B3C05B960EDF6DB /* AddInstallationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23D7060F8AA6C76C817E382D /* AddInstallationView.swift */; };
+		7A594197DA43E6B85BAD5547 /* HelperApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C335FEF466003A276B51045 /* HelperApp.swift */; };
+		A9E7B41BED28F6266B56E514 /* AbletonRPCHelper.app in Resources */ = {isa = PBXBuildFile; fileRef = 880AD25277811804FA983028 /* AbletonRPCHelper.app */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		DEB834A0FF9CE002617AADEC /* InstallationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86CE75AADBF6225BC172F314 /* InstallationManager.swift */; };
+		E8D8282087B87DF5FCB7638F /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B0C37245255E7776E508CA1 /* ContentView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		FAAA0EF863E4D9A763949340 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7A8F6B4BAFAA06F1FA210250 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 68DDBDC704A7C59D09E22277;
+			remoteInfo = AbletonRPCHelper;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		14CFC14B19AEED3F04CC4D22 /* AbletonRPC.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AbletonRPC.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		23D7060F8AA6C76C817E382D /* AddInstallationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddInstallationView.swift; sourceTree = "<group>"; };
+		5C335FEF466003A276B51045 /* HelperApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperApp.swift; sourceTree = "<group>"; };
+		86CE75AADBF6225BC172F314 /* InstallationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallationManager.swift; sourceTree = "<group>"; };
+		880AD25277811804FA983028 /* AbletonRPCHelper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AbletonRPCHelper.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8EE46819F71280ED96F15175 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		9B0C37245255E7776E508CA1 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		FA2FE2DA59A175DAAB92FAF5 /* AbletonRPCApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AbletonRPCApp.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		0B8FEE3264C93599DC37B9CC /* AbletonRPC */ = {
+			isa = PBXGroup;
+			children = (
+				FA2FE2DA59A175DAAB92FAF5 /* AbletonRPCApp.swift */,
+				23D7060F8AA6C76C817E382D /* AddInstallationView.swift */,
+				9B0C37245255E7776E508CA1 /* ContentView.swift */,
+				86CE75AADBF6225BC172F314 /* InstallationManager.swift */,
+				8EE46819F71280ED96F15175 /* Models.swift */,
+			);
+			path = AbletonRPC;
+			sourceTree = "<group>";
+		};
+		476D114BB6174115A004C8D1 = {
+			isa = PBXGroup;
+			children = (
+				0B8FEE3264C93599DC37B9CC /* AbletonRPC */,
+				9A338EACDDFA77FCB51F988A /* AbletonRPCHelper */,
+				E4BA533EB1F1D463F4E8066D /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		9A338EACDDFA77FCB51F988A /* AbletonRPCHelper */ = {
+			isa = PBXGroup;
+			children = (
+				5C335FEF466003A276B51045 /* HelperApp.swift */,
+			);
+			path = AbletonRPCHelper;
+			sourceTree = "<group>";
+		};
+		E4BA533EB1F1D463F4E8066D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				14CFC14B19AEED3F04CC4D22 /* AbletonRPC.app */,
+				880AD25277811804FA983028 /* AbletonRPCHelper.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		68DDBDC704A7C59D09E22277 /* AbletonRPCHelper */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 574B1B35D4C40F41E2F7E5BB /* Build configuration list for PBXNativeTarget "AbletonRPCHelper" */;
+			buildPhases = (
+				1106ABA4C4CE27C8AF235BA3 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AbletonRPCHelper;
+			packageProductDependencies = (
+			);
+			productName = AbletonRPCHelper;
+			productReference = 880AD25277811804FA983028 /* AbletonRPCHelper.app */;
+			productType = "com.apple.product-type.application";
+		};
+		9C150719EC65F99A6B4E0C07 /* AbletonRPC */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 17D6EDE3DB117233D65559E9 /* Build configuration list for PBXNativeTarget "AbletonRPC" */;
+			buildPhases = (
+				1B9AC9154D2765DF5B43B9BF /* Sources */,
+				CA5D8BBE84CF0FCA122888A4 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				306F005DF301B00167C71695 /* PBXTargetDependency */,
+			);
+			name = AbletonRPC;
+			packageProductDependencies = (
+			);
+			productName = AbletonRPC;
+			productReference = 14CFC14B19AEED3F04CC4D22 /* AbletonRPC.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		7A8F6B4BAFAA06F1FA210250 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					68DDBDC704A7C59D09E22277 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Manual;
+					};
+					9C150719EC65F99A6B4E0C07 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Manual;
+					};
+				};
+			};
+			buildConfigurationList = 55EF855C473D511E83A77B68 /* Build configuration list for PBXProject "AbletonRPC" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 476D114BB6174115A004C8D1;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = E4BA533EB1F1D463F4E8066D /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				9C150719EC65F99A6B4E0C07 /* AbletonRPC */,
+				68DDBDC704A7C59D09E22277 /* AbletonRPCHelper */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		CA5D8BBE84CF0FCA122888A4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A9E7B41BED28F6266B56E514 /* AbletonRPCHelper.app in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		1106ABA4C4CE27C8AF235BA3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7A594197DA43E6B85BAD5547 /* HelperApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1B9AC9154D2765DF5B43B9BF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				641E76772D8D5CB51DEFCE3A /* AbletonRPCApp.swift in Sources */,
+				66F53EE43B3C05B960EDF6DB /* AddInstallationView.swift in Sources */,
+				E8D8282087B87DF5FCB7638F /* ContentView.swift in Sources */,
+				DEB834A0FF9CE002617AADEC /* InstallationManager.swift in Sources */,
+				02F54799601192EC82094076 /* Models.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		306F005DF301B00167C71695 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 68DDBDC704A7C59D09E22277 /* AbletonRPCHelper */;
+			targetProxy = FAAA0EF863E4D9A763949340 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0A61D1D198A1320B9F243B71 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGNING_REQUIRED = YES;
+				CODE_SIGN_ENTITLEMENTS = AbletonRPCHelper/AbletonRPCHelper.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = AbletonRPCHelper/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kiwi.AbletonRPC.Helper;
+				PRODUCT_NAME = AbletonRPCHelper;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		207DB3CE2E781BE045787C65 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGNING_REQUIRED = YES;
+				CODE_SIGN_ENTITLEMENTS = AbletonRPCHelper/AbletonRPCHelper.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = AbletonRPCHelper/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kiwi.AbletonRPC.Helper;
+				PRODUCT_NAME = AbletonRPCHelper;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		2BFC37E40EF29C268D43D5FB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGNING_REQUIRED = YES;
+				CODE_SIGN_ENTITLEMENTS = AbletonRPC/AbletonRPC.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = AbletonRPC/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kiwi.AbletonRPC;
+				PRODUCT_NAME = AbletonRPC;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		3DCA0D7FED67BBFA652647CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGNING_REQUIRED = YES;
+				CODE_SIGN_ENTITLEMENTS = AbletonRPC/AbletonRPC.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = AbletonRPC/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kiwi.AbletonRPC;
+				PRODUCT_NAME = AbletonRPC;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		51B74B20E144EF419B62DD38 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		D6BAF2D2B169A89DB46C513B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		17D6EDE3DB117233D65559E9 /* Build configuration list for PBXNativeTarget "AbletonRPC" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3DCA0D7FED67BBFA652647CD /* Debug */,
+				2BFC37E40EF29C268D43D5FB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		55EF855C473D511E83A77B68 /* Build configuration list for PBXProject "AbletonRPC" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D6BAF2D2B169A89DB46C513B /* Debug */,
+				51B74B20E144EF419B62DD38 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		574B1B35D4C40F41E2F7E5BB /* Build configuration list for PBXNativeTarget "AbletonRPCHelper" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				207DB3CE2E781BE045787C65 /* Debug */,
+				0A61D1D198A1320B9F243B71 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 7A8F6B4BAFAA06F1FA210250 /* Project object */;
+}

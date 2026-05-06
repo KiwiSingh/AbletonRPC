@@ -1,5 +1,0 @@
-pypresence
-psutil
-py2app
-plistlib
-setuptools

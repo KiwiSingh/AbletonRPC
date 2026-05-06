@@ -1,0 +1,151 @@
+name: AbletonRPC
+options:
+  bundleIdPrefix: com.kiwi
+  deploymentTarget:
+    macOS: "13.0"
+  xcodeVersion: "15"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MACOSX_DEPLOYMENT_TARGET: "13.0"
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "-"
+    DEVELOPMENT_TEAM: ""
+    ENABLE_HARDENED_RUNTIME: NO
+    ALWAYS_SEARCH_USER_PATHS: NO
+    GENERATE_INFOPLIST_FILE: NO
+
+targets:
+
+  # ── Main GUI app ──────────────────────────────────────────────────────────
+  AbletonRPC:
+    type: application
+    platform: macOS
+    deploymentTarget: "13.0"
+
+    entitlements:
+      path: AbletonRPC/AbletonRPC.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
+        com.apple.security.files.user-selected.read-write: true
+
+    settings:
+      base:
+        PRODUCT_NAME: AbletonRPC
+        PRODUCT_BUNDLE_IDENTIFIER: com.kiwi.AbletonRPC
+        INFOPLIST_FILE: AbletonRPC/Info.plist
+        CODE_SIGN_ENTITLEMENTS: AbletonRPC/AbletonRPC.entitlements
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGNING_REQUIRED: YES
+        CODE_SIGNING_ALLOWED: YES
+
+    sources:
+      - path: AbletonRPC
+        includes:
+          - "*.swift"
+
+    resources:
+      - path: Resources/ableton_rpc.py
+      - path: icon.icns
+        optional: true
+
+    dependencies:
+      - target: AbletonRPCHelper
+        embed: true
+        codeSign: true
+        destination: loginItems
+
+  # ── Background helper ─────────────────────────────────────────────────────
+  AbletonRPCHelper:
+    type: application
+    platform: macOS
+    deploymentTarget: "13.0"
+
+    entitlements:
+      path: AbletonRPCHelper/AbletonRPCHelper.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
+
+    settings:
+      base:
+        PRODUCT_NAME: AbletonRPCHelper
+        PRODUCT_BUNDLE_IDENTIFIER: com.kiwi.AbletonRPC.Helper
+        INFOPLIST_FILE: AbletonRPCHelper/Info.plist
+        CODE_SIGN_ENTITLEMENTS: AbletonRPCHelper/AbletonRPCHelper.entitlements
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGNING_REQUIRED: YES
+        CODE_SIGNING_ALLOWED: YES
+
+    sources:
+      - path: AbletonRPCHelper
+        includes:
+          - "*.swift"
+
+targets:
+
+  # ── Main GUI app ──────────────────────────────────────────────────────────
+  AbletonRPC:
+    type: application
+    platform: macOS
+    deploymentTarget: "13.0"
+
+    entitlements:
+      path: AbletonRPC/AbletonRPC.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
+        com.apple.security.files.user-selected.read-write: true
+
+    settings:
+      base:
+        PRODUCT_NAME: AbletonRPC
+        PRODUCT_BUNDLE_IDENTIFIER: com.kiwi.AbletonRPC
+        INFOPLIST_FILE: AbletonRPC/Info.plist
+        CODE_SIGN_ENTITLEMENTS: AbletonRPC/AbletonRPC.entitlements
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGNING_REQUIRED: YES
+        CODE_SIGNING_ALLOWED: YES
+
+    sources:
+      - path: AbletonRPC
+        includes:
+          - "*.swift"
+
+    resources:
+      - path: Resources/ableton_rpc.py
+      - path: icon.icns
+        optional: true
+
+    dependencies:
+      - target: AbletonRPCHelper
+        embed: true
+        codeSign: true
+        destination: loginItems
+
+  # ── Background helper ─────────────────────────────────────────────────────
+  AbletonRPCHelper:
+    type: application
+    platform: macOS
+    deploymentTarget: "13.0"
+
+    entitlements:
+      path: AbletonRPCHelper/AbletonRPCHelper.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
+
+    settings:
+      base:
+        PRODUCT_NAME: AbletonRPCHelper
+        PRODUCT_BUNDLE_IDENTIFIER: com.kiwi.AbletonRPC.Helper
+        INFOPLIST_FILE: AbletonRPCHelper/Info.plist
+        CODE_SIGN_ENTITLEMENTS: AbletonRPCHelper/AbletonRPCHelper.entitlements
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGNING_REQUIRED: YES
+        CODE_SIGNING_ALLOWED: YES
+
+    sources:
+      - path: AbletonRPCHelper
+        includes:
+          - "*.swift"
