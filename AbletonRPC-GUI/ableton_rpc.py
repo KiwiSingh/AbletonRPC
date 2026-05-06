@@ -634,90 +634,138 @@ def run_multi_gui():
     root = tk.Tk()
     root.title("AbletonRPC - Multi-Installation Manager")
     root.geometry("800x700")
-    
+
+    # --- Explicit light-mode palette (fixes macOS dark-mode rendering bug) ---
+    BG       = "#f0f0f0"   # window / frame background
+    FG       = "#111111"   # default text
+    ENTRY_BG = "#ffffff"   # text entry / text widget background
+    ENTRY_FG = "#111111"
+    SEP      = "#cccccc"   # subtle borders
+
+    root.configure(bg=BG)
+
+    # Apply light colours to every ttk widget via a dedicated style
+    style = ttk.Style(root)
+    style.theme_use("default")
+    style.configure("Treeview",
+                    background=ENTRY_BG, foreground=FG,
+                    fieldbackground=ENTRY_BG, rowheight=24)
+    style.configure("Treeview.Heading", background=BG, foreground=FG)
+    style.map("Treeview", background=[("selected", "#4a90d9")],
+              foreground=[("selected", "#ffffff")])
+
+    def Frame(parent, **kw):
+        kw.setdefault("bg", BG)
+        return tk.Frame(parent, **kw)
+
+    def Label(parent, **kw):
+        kw.setdefault("bg", BG)
+        kw.setdefault("fg", FG)
+        return tk.Label(parent, **kw)
+
     manager = MultiAbletonRPCManager()
-    
+
     # Header
-    header_frame = tk.Frame(root)
+    header_frame = Frame(root)
     header_frame.pack(fill=tk.X, padx=20, pady=10)
-    
-    tk.Label(header_frame, text="Ableton Discord RPC v2.0.1", font=("Helvetica", 20, "bold")).pack()
-    tk.Label(header_frame, text="Brand New Day", font=("Helvetica", 12), fg="blue").pack()
-    
+
+    Label(header_frame, text="Ableton Discord RPC v2.0.1",
+          font=("Helvetica", 20, "bold")).pack()
+    Label(header_frame, text="Brand New Day",
+          font=("Helvetica", 12), fg="blue").pack()
+
     # Running versions detection
-    detect_frame = tk.Frame(root)
+    detect_frame = Frame(root)
     detect_frame.pack(fill=tk.X, padx=20, pady=10)
-    
-    tk.Label(detect_frame, text="🔍 Detected Running Ableton Versions:", font=("Helvetica", 12, "bold")).pack(anchor="w")
-    
-    running_text = tk.Text(detect_frame, height=3, font=("Monaco", 10))
+
+    Label(detect_frame, text="🔍 Detected Running Ableton Versions:",
+          font=("Helvetica", 12, "bold")).pack(anchor="w")
+
+    running_text = tk.Text(detect_frame, height=3, font=("Monaco", 10),
+                           bg=ENTRY_BG, fg=ENTRY_FG,
+                           insertbackground=FG, relief=tk.SOLID, bd=1)
     running_text.pack(fill=tk.X, pady=5)
-    
+
     def refresh_running():
         running_versions = manager.get_running_ableton_versions()
+        running_text.config(state="normal")
         running_text.delete(1.0, tk.END)
         if running_versions:
             for version in running_versions:
-                running_text.insert(tk.END, f"• {version['name']} (PID: {version['pid']}) - {version['path']}\n")
+                running_text.insert(tk.END,
+                    f"• {version['name']} (PID: {version['pid']}) - {version['path']}\n")
         else:
             running_text.insert(tk.END, "No Ableton Live instances currently running")
         running_text.config(state="disabled")
-    
-    tk.Button(detect_frame, text="Refresh", command=refresh_running).pack(anchor="e")
+
+    tk.Button(detect_frame, text="Refresh", command=refresh_running,
+              bg=BG, fg=FG).pack(anchor="e")
     refresh_running()
-    
+
     # Installations list
-    list_frame = tk.Frame(root)
+    list_frame = Frame(root)
     list_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-    
-    tk.Label(list_frame, text="📋 Configured Installations:", font=("Helvetica", 12, "bold")).pack(anchor="w")
-    
-    # Treeview for installations
+
+    Label(list_frame, text="📋 Configured Installations:",
+          font=("Helvetica", 12, "bold")).pack(anchor="w")
+
     columns = ("Name", "Version", "Status", "Log Path")
     tree = ttk.Treeview(list_frame, columns=columns, show="headings", height=8)
-    
+
     for col in columns:
         tree.heading(col, text=col)
         tree.column(col, width=150)
-    
+
     tree.pack(fill=tk.BOTH, expand=True, pady=5)
-    
-    # Scrollbar for treeview
+
     scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=tree.yview)
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
     tree.configure(yscrollcommand=scrollbar.set)
-    
+
     def refresh_installations():
         for item in tree.get_children():
             tree.delete(item)
-        
         for install in manager.installations.values():
             status = "🟢 Running" if manager.get_service_status(install) else "🔴 Stopped"
             version = Path(install.ableton_path).name
             tree.insert("", tk.END, values=(install.name, version, status, install.log_path))
-    
+
     # Control buttons
-    control_frame = tk.Frame(root)
+    control_frame = Frame(root)
     control_frame.pack(fill=tk.X, padx=20, pady=10)
-    
+
     def add_installation():
         add_window = tk.Toplevel(root)
         add_window.title("Add Ableton Installation")
-        add_window.geometry("500x400")
+        add_window.geometry("500x420")
+        add_window.configure(bg=BG)
         add_window.transient(root)
         add_window.grab_set()
-        
-        tk.Label(add_window, text="Add New Ableton Installation", font=("Helvetica", 16, "bold")).pack(pady=20)
-        
+
+        def ALabel(parent, **kw):
+            kw.setdefault("bg", BG); kw.setdefault("fg", FG)
+            return tk.Label(parent, **kw)
+
+        def AEntry(parent, **kw):
+            kw.setdefault("bg", ENTRY_BG); kw.setdefault("fg", ENTRY_FG)
+            kw.setdefault("insertbackground", FG)
+            return tk.Entry(parent, **kw)
+
+        ALabel(add_window, text="Add New Ableton Installation",
+               font=("Helvetica", 16, "bold")).pack(pady=20)
+
         # Name
-        tk.Label(add_window, text="Installation Name:", font=("Helvetica", 11, "bold")).pack(anchor="w", padx=40)
+        ALabel(add_window, text="Installation Name:",
+               font=("Helvetica", 11, "bold")).pack(anchor="w", padx=40)
         name_var = tk.StringVar()
-        tk.Entry(add_window, textvariable=name_var, width=50).pack(pady=5)
-        
+        AEntry(add_window, textvariable=name_var, width=50).pack(pady=5)
+
         # Ableton path
-        tk.Label(add_window, text="Ableton Live Application:", font=("Helvetica", 11, "bold")).pack(anchor="w", padx=40, pady=(15,0))
+        ALabel(add_window, text="Ableton Live Application:",
+               font=("Helvetica", 11, "bold")).pack(anchor="w", padx=40, pady=(15, 0))
         ableton_var = tk.StringVar()
-        tk.Entry(add_window, textvariable=ableton_var, width=50).pack(pady=5)
+        AEntry(add_window, textvariable=ableton_var, width=50).pack(pady=5)
+
         def pick_ableton_app():
             path = filedialog.askdirectory(
                 title="Select Ableton Live .app bundle",
@@ -732,39 +780,39 @@ def run_multi_gui():
                     return
                 ableton_var.set(path)
 
-        tk.Button(add_window, text="Select App...", command=pick_ableton_app).pack()
-        
+        tk.Button(add_window, text="Select App...", command=pick_ableton_app,
+                  bg=BG, fg=FG).pack()
+
         # Log path
-        tk.Label(add_window, text="Log File Location:", font=("Helvetica", 11, "bold")).pack(anchor="w", padx=40, pady=(15,0))
+        ALabel(add_window, text="Log File Location:",
+               font=("Helvetica", 11, "bold")).pack(anchor="w", padx=40, pady=(15, 0))
         log_var = tk.StringVar()
-        tk.Entry(add_window, textvariable=log_var, width=50).pack(pady=5)
-        tk.Button(add_window, text="Choose Location...", 
-                 command=lambda: log_var.set(filedialog.asksaveasfilename(defaultextension=".txt"))).pack()
-        
+        AEntry(add_window, textvariable=log_var, width=50).pack(pady=5)
+        tk.Button(add_window, text="Choose Location...", bg=BG, fg=FG,
+                  command=lambda: log_var.set(
+                      filedialog.asksaveasfilename(defaultextension=".txt"))).pack()
+
         # Client ID (optional)
-        tk.Label(add_window, text="Discord Client ID (optional):", font=("Helvetica", 11, "bold")).pack(anchor="w", padx=40, pady=(15,0))
+        ALabel(add_window, text="Discord Client ID (optional):",
+               font=("Helvetica", 11, "bold")).pack(anchor="w", padx=40, pady=(15, 0))
         client_var = tk.StringVar(value=DEFAULT_CLIENT_ID)
-        tk.Entry(add_window, textvariable=client_var, width=50).pack(pady=5)
-        
+        AEntry(add_window, textvariable=client_var, width=50).pack(pady=5)
+
         def save_installation():
             if not all([name_var.get(), ableton_var.get(), log_var.get()]):
                 messagebox.showerror("Error", "Please fill in all required fields")
                 return
-            
             try:
                 install = manager.add_installation(
-                    name_var.get(), 
-                    ableton_var.get(), 
-                    log_var.get(), 
+                    name_var.get(),
+                    ableton_var.get(),
+                    log_var.get(),
                     client_var.get() or DEFAULT_CLIENT_ID
                 )
-                
-                # Install MIDI script and launch agent
                 script_success = manager.patch_ableton_midi_script(install)
-                agent_success = manager.install_launch_agent(install)
-                
+                agent_success  = manager.install_launch_agent(install)
                 if script_success and agent_success:
-                    messagebox.showinfo("Success", 
+                    messagebox.showinfo("Success",
                         f"✅ Installation '{install.name}' added successfully!\n\n"
                         f"Service: {install.service_name}\n"
                         f"Log: {install.log_path}\n"
@@ -778,49 +826,43 @@ def run_multi_gui():
                     messagebox.showerror("Error", "Installation failed - check console for details")
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to add installation: {e}")
-        
-        tk.Button(add_window, text="Add Installation", bg="#5865F2", fg="white", 
-                 font=("Helvetica", 12, "bold"), command=save_installation).pack(pady=20)
-    
+
+        tk.Button(add_window, text="Add Installation",
+                  bg="#5865F2", fg="white",
+                  font=("Helvetica", 12, "bold"),
+                  command=save_installation).pack(pady=20)
+
     def remove_installation():
         selection = tree.selection()
         if not selection:
             messagebox.showwarning("Warning", "Please select an installation to remove")
             return
-        
         item = tree.item(selection[0])
         install_name = item['values'][0]
-        
-        # Find installation by name
         install_to_remove = None
         for install in manager.installations.values():
             if install.name == install_name:
                 install_to_remove = install
                 break
-        
         if install_to_remove and messagebox.askyesno("Confirm", f"Remove installation '{install_name}'?"):
             if manager.remove_installation(install_to_remove.install_hash):
                 messagebox.showinfo("Success", f"Installation '{install_name}' removed")
                 refresh_installations()
             else:
                 messagebox.showerror("Error", "Failed to remove installation")
-    
+
     def start_stop_service():
         selection = tree.selection()
         if not selection:
             messagebox.showwarning("Warning", "Please select an installation")
             return
-        
         item = tree.item(selection[0])
         install_name = item['values'][0]
-        
-        # Find installation by name
         install = None
         for i in manager.installations.values():
             if i.name == install_name:
                 install = i
                 break
-        
         if install:
             if manager.get_service_status(install):
                 if manager.stop_service(install):
@@ -833,36 +875,38 @@ def run_multi_gui():
                 else:
                     messagebox.showerror("Error", "Failed to start service")
             refresh_installations()
-    
-    # Control buttons
-    btn_frame = tk.Frame(control_frame)
+
+    btn_frame = Frame(root)
     btn_frame.pack()
-    
-    tk.Button(btn_frame, text="➕ Add Installation", command=add_installation, 
-             bg="#28a745", fg="white", font=("Helvetica", 10, "bold")).pack(side=tk.LEFT, padx=5)
-    tk.Button(btn_frame, text="🗑️ Remove", command=remove_installation, 
-             bg="#dc3545", fg="white", font=("Helvetica", 10, "bold")).pack(side=tk.LEFT, padx=5)
-    tk.Button(btn_frame, text="⚡ Start/Stop", command=start_stop_service, 
-             bg="#ffc107", fg="black", font=("Helvetica", 10, "bold")).pack(side=tk.LEFT, padx=5)
-    tk.Button(btn_frame, text="🔄 Refresh", command=lambda: [refresh_running(), refresh_installations()], 
-             bg="#17a2b8", fg="white", font=("Helvetica", 10, "bold")).pack(side=tk.LEFT, padx=5)
-    
+
+    tk.Button(btn_frame, text="➕ Add Installation", command=add_installation,
+              bg="#28a745", fg="white", font=("Helvetica", 10, "bold")).pack(side=tk.LEFT, padx=5)
+    tk.Button(btn_frame, text="🗑️ Remove", command=remove_installation,
+              bg="#dc3545", fg="white", font=("Helvetica", 10, "bold")).pack(side=tk.LEFT, padx=5)
+    tk.Button(btn_frame, text="⚡ Start/Stop", command=start_stop_service,
+              bg="#ffc107", fg="black", font=("Helvetica", 10, "bold")).pack(side=tk.LEFT, padx=5)
+    tk.Button(btn_frame, text="🔄 Refresh",
+              command=lambda: [refresh_running(), refresh_installations()],
+              bg="#17a2b8", fg="white", font=("Helvetica", 10, "bold")).pack(side=tk.LEFT, padx=5)
+
     refresh_installations()
-    
+
     # Status info
-    info_frame = tk.Frame(root)
+    info_frame = Frame(root)
     info_frame.pack(fill=tk.X, padx=20, pady=10)
-    
-    info_text = tk.Text(info_frame, height=4, font=("Monaco", 9))
+
+    info_text = tk.Text(info_frame, height=4, font=("Monaco", 9),
+                        bg=ENTRY_BG, fg=ENTRY_FG,
+                        insertbackground=FG, relief=tk.SOLID, bd=1)
     info_text.pack(fill=tk.X)
-    info_text.insert("1.0", 
+    info_text.insert("1.0",
         "💡 Multi-Installation Features:\n"
         "• Each Ableton version gets its own service and log file\n"
         "• Services run independently - no conflicts between versions\n"
         "• Discord shows which specific Ableton version is active\n"
         "• Debug logs include installation name for easy troubleshooting")
     info_text.config(state="disabled")
-    
+
     root.mainloop()
 
 def main():
