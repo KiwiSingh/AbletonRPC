@@ -228,8 +228,55 @@ class FauxMIDI(ControlSurface):
                 self.song.add_is_playing_listener(self.log_state)
             if hasattr(self.song, "record_mode_has_listener") and not self.song.record_mode_has_listener(self.log_state):
                 self.song.add_record_mode_listener(self.log_state)
+            # Track and device selection listeners (v3.1+)
+            try:
+                view = self.song.view
+                if hasattr(view, "selected_track_has_listener") and not view.selected_track_has_listener(self.log_state):
+                    view.add_selected_track_listener(self.log_state)
+                if hasattr(view, "selected_device_has_listener") and not view.selected_device_has_listener(self.log_state):
+                    view.add_selected_device_listener(self.log_state)
+            except Exception as e:
+                self._debug_log(f"Track/device listener setup skipped: {e}")
         except Exception as e:
             self._debug_log(f"Listener setup error: {e}")
+
+    def _get_track_info(self):
+        """Return (track_name, track_type, device_name) for the currently selected track."""
+        try:
+            view = self.song.view
+            track = getattr(view, "selected_track", None)
+            if track is None:
+                return None, None, None
+
+            track_name = getattr(track, "name", None) or None
+
+            # Determine track type
+            track_type = None
+            try:
+                if getattr(track, "has_midi_input", False):
+                    track_type = "MIDI"
+                elif getattr(track, "has_audio_input", False):
+                    track_type = "Audio"
+            except Exception:
+                pass
+
+            # Selected device via track view
+            device_name = None
+            try:
+                track_view = getattr(track, "view", None)
+                selected_device = getattr(track_view, "selected_device", None) if track_view else None
+                if selected_device is None:
+                    # Fall back to selected_device on song view
+                    selected_device = getattr(view, "selected_device", None)
+                if selected_device:
+                    device_name = getattr(selected_device, "name", None) or None
+            except Exception:
+                pass
+
+            return track_name, track_type, device_name
+        except Exception as e:
+            self._debug_log(f"Track info error: {e}")
+            return None, None, None
 
     def log_state(self):
         try:
@@ -247,12 +294,20 @@ class FauxMIDI(ControlSurface):
             record_mode = getattr(self.song, "record_mode", False)
             state = "Recording" if record_mode else ("Playing" if is_playing else "Stopped")
 
+            track_name, track_type, device_name = self._get_track_info()
+
             os.makedirs(os.path.dirname(self.log_file_path), exist_ok=True)
             with open(self.log_file_path, "w", encoding="utf-8") as f:
                 f.write(f"PROJECT:{project}\\n")
                 f.write(f"TEMPO:{tempo}\\n")
                 f.write(f"STATE:{state}\\n")
                 f.write(f"INSTALLATION:{self.installation_name}\\n")
+                if track_name:
+                    f.write(f"TRACK:{track_name}\\n")
+                if track_type:
+                    f.write(f"TRACK_TYPE:{track_type}\\n")
+                if device_name:
+                    f.write(f"DEVICE:{device_name}\\n")
                 f.flush()
                 os.fsync(f.fileno())
         except Exception as e:
@@ -268,6 +323,14 @@ class FauxMIDI(ControlSurface):
                         getattr(self.song, remove)(self.log_state)
                 except:
                     pass
+            try:
+                view = self.song.view
+                if hasattr(view, "remove_selected_track_listener"):
+                    view.remove_selected_track_listener(self.log_state)
+                if hasattr(view, "remove_selected_device_listener"):
+                    view.remove_selected_device_listener(self.log_state)
+            except:
+                pass
         except Exception as e:
             self._debug_log(f"Disconnect error: {e}")
         super(FauxMIDI, self).disconnect()
@@ -306,20 +369,88 @@ def remove_faux_midi(installation):
 
 
 # ---------------------------------------------------------------------------
-# Per-installation monitoring app
+# Discord presence coordinator
+# ---------------------------------------------------------------------------
+# Multiple daemons (one per installation) share a single Discord connection
+# slot. A JSON lock file decides who owns it:
+#   Recording > Playing > Stopped
+# Each daemon refreshes the lock every tick while active. If the owner goes
+# silent for > LOCK_TTL seconds, any other active daemon can steal it.
+
+LOCK_FILE  = CONFIG_DIR / "discord_owner.json"
+LOCK_TTL   = 12   # seconds before a stale lock can be stolen
+
+PRIORITY = {"Recording": 2, "Playing": 1, "Stopped": 0}
+
+
+def _read_lock():
+    try:
+        with open(LOCK_FILE) as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _write_lock(install_hash: str, state: str):
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        with open(LOCK_FILE, "w") as f:
+            json.dump({
+                "owner": install_hash,
+                "state": state,
+                "ts":    time.time(),
+            }, f)
+    except Exception:
+        pass
+
+
+def _release_lock(install_hash: str):
+    lock = _read_lock()
+    if lock.get("owner") == install_hash:
+        try:
+            LOCK_FILE.unlink(missing_ok=True)
+        except Exception:
+            pass
+
+
+def _try_acquire_lock(install_hash: str, state: str) -> bool:
+    """Return True if this daemon should own the Discord presence."""
+    lock = _read_lock()
+    owner     = lock.get("owner")
+    own_state = lock.get("state", "Stopped")
+    ts        = lock.get("ts", 0)
+
+    if not owner:                                        # nobody owns it
+        _write_lock(install_hash, state)
+        return True
+    if owner == install_hash:                            # we already own it
+        _write_lock(install_hash, state)
+        return True
+    if time.time() - ts > LOCK_TTL:                     # owner went silent
+        _write_lock(install_hash, state)
+        return True
+    if PRIORITY.get(state, 0) > PRIORITY.get(own_state, 0):  # higher priority
+        _write_lock(install_hash, state)
+        return True
+    return False
+
+
+# ---------------------------------------------------------------------------
+# Per-installation monitoring daemon
 # ---------------------------------------------------------------------------
 
 class AbletonRPCApp:
     def __init__(self, installation):
-        self.installation   = installation
-        self.rpc            = None
-        self.last_mtime     = 0
-        self.last_payload   = None
-        self.start_time     = int(time.time())
-        self.was_running    = False
+        self.installation = installation
+        self.rpc          = None
+        self.last_mtime   = 0
+        self.last_payload = None
+        self.start_time   = int(time.time())
+        self.was_running  = False
+        self.owns_lock    = False
 
     def run(self):
-        print(f"🔍 Monitoring: {self.installation.name}")
+        print(f"🔍 [{self.installation.name}] Daemon started (PID {os.getpid()})")
         while True:
             try:
                 self._tick()
@@ -328,35 +459,45 @@ class AbletonRPCApp:
                 if "pipe" in msg or "closed" in msg:
                     print(f"🔌 [{self.installation.name}] Pipe closed — reconnecting")
                     self.rpc = None
+                    self.owns_lock = False
                 else:
                     print(f"⚠️  [{self.installation.name}] Loop error: {e}")
                 time.sleep(5)
 
+    def _connect(self):
+        try:
+            self.rpc = BroadPresence(self.installation.client_id)
+            self.rpc.connect()
+            print(f"✅ [{self.installation.name}] Connected to Discord")
+            return True
+        except Exception as e:
+            print(f"⚠️  [{self.installation.name}] Discord connect failed: {e}")
+            self.rpc = None
+            return False
+
     def _tick(self):
         if not self.rpc:
-            try:
-                self.rpc = BroadPresence(self.installation.client_id)
-                self.rpc.connect()
-                print(f"✅ [{self.installation.name}] Connected to Discord")
-            except Exception as e:
-                print(f"⚠️  [{self.installation.name}] Discord connect failed: {e}")
+            if not self._connect():
                 time.sleep(10)
                 return
 
         running = self._is_running()
 
         if running and not self.was_running:
-            self.start_time = int(time.time())
+            self.start_time  = int(time.time())
             self.was_running = True
             print(f"🎵 [{self.installation.name}] Detected — monitoring started")
+
         elif not running and self.was_running:
-            if self.rpc:
+            self.was_running = False
+            if self.owns_lock:
+                self.owns_lock = False
+                _release_lock(self.installation.install_hash)
                 try:
                     self.rpc.clear()
                 except Exception:
                     pass
             print(f"🔇 [{self.installation.name}] Closed — presence cleared")
-            self.was_running = False
             time.sleep(5)
             return
 
@@ -364,6 +505,7 @@ class AbletonRPCApp:
             time.sleep(3)
             return
 
+        # ── Read log file ──────────────────────────────────────────────────
         log_path = self.installation.log_path
         if not os.path.exists(log_path):
             time.sleep(1)
@@ -375,41 +517,82 @@ class AbletonRPCApp:
             time.sleep(1)
             return
 
-        if mtime != self.last_mtime:
-            self.last_mtime = mtime
-            time.sleep(0.2)
-            try:
-                with open(log_path, "r", encoding="utf-8") as f:
-                    content = f.read()
-            except OSError:
-                time.sleep(0.5)
-                return
+        if mtime == self.last_mtime:
+            # Even with no change, refresh the lock while playing/recording
+            if self.owns_lock:
+                lock = _read_lock()
+                if lock.get("owner") == self.installation.install_hash:
+                    _write_lock(self.installation.install_hash,
+                                lock.get("state", "Stopped"))
+            time.sleep(3)
+            return
 
-            data = {}
-            for line in content.splitlines():
-                if ":" in line:
-                    k, v = line.split(":", 1)
-                    data[k.strip()] = v.strip()
+        self.last_mtime = mtime
+        time.sleep(0.2)
 
-            project  = data.get("PROJECT", "Unsaved Project")
-            tempo    = data.get("TEMPO", "120")
-            state    = data.get("STATE", "Stopped")
-            inst_name = data.get("INSTALLATION", self.installation.name)
+        try:
+            with open(log_path, "r", encoding="utf-8") as f:
+                content = f.read()
+        except OSError:
+            time.sleep(0.5)
+            return
 
-            payload = (project, tempo, state)
-            if payload != self.last_payload and self.rpc:
-                self.last_payload = payload
-                try:
-                    self.rpc.update(
-                        state=f"{state} · {tempo} BPM",
-                        details=f"{inst_name}: {project}",
-                        large_image="ableton_image",
-                        start=self.start_time,
-                    )
-                    print(f"📡 [{inst_name}] {project} | {state} | {tempo} BPM")
-                except Exception as e:
-                    print(f"⚠️  [{self.installation.name}] RPC update error: {e}")
-                    self.rpc = None
+        data = {}
+        for line in content.splitlines():
+            if ":" in line:
+                k, v = line.split(":", 1)
+                data[k.strip()] = v.strip()
+
+        project    = data.get("PROJECT", "Unsaved Project")
+        tempo      = data.get("TEMPO", "120")
+        state      = data.get("STATE", "Stopped")
+        inst_name  = data.get("INSTALLATION", self.installation.name)
+        track      = data.get("TRACK")
+        track_type = data.get("TRACK_TYPE")
+        device     = data.get("DEVICE")
+
+        # ── Acquire or check lock ──────────────────────────────────────────
+        self.owns_lock = _try_acquire_lock(self.installation.install_hash, state)
+        if not self.owns_lock:
+            # Another installation owns the presence — don't update Discord
+            time.sleep(3)
+            return
+
+        payload = (project, tempo, state, track, device)
+        if payload == self.last_payload:
+            time.sleep(3)
+            return
+        self.last_payload = payload
+
+        # ── Update Discord ─────────────────────────────────────────────────
+        try:
+            if track:
+                type_tag = f" [{track_type}]" if track_type else ""
+                details  = f"{project} — {track}{type_tag}"
+            else:
+                details  = project
+
+            state_str = f"{state} · {tempo} BPM"
+            if device:
+                state_str += f" · {device}"
+
+            details   = details[:128]
+            state_str = state_str[:128]
+
+            self.rpc.update(
+                state=state_str,
+                details=details,
+                large_image="ableton_image",
+                large_text=inst_name,
+                start=self.start_time,
+            )
+            track_info  = f" | {track}" if track else ""
+            device_info = f" → {device}" if device else ""
+            print(f"📡 [{inst_name}] {project}{track_info}{device_info} | {state} | {tempo} BPM")
+        except Exception as e:
+            print(f"⚠️  [{self.installation.name}] RPC update error: {e}")
+            self.rpc      = None
+            self.owns_lock = False
 
         time.sleep(3)
 
@@ -434,29 +617,31 @@ class AbletonRPCApp:
 # Entry point
 # ---------------------------------------------------------------------------
 
-def run_daemon():
+def run_daemon(install_hash: str):
+    """Run the daemon for a single installation identified by install_hash."""
+    # Prevent duplicate daemons for the same installation via a lockfile
+    import fcntl
+    lock_path = CONFIG_DIR / f"daemon-{install_hash}.lock"
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        lock_fd = open(lock_path, "w")
+        fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        lock_fd.write(str(os.getpid()))
+        lock_fd.flush()
+    except (IOError, OSError):
+        print(f"⚠️  Daemon for {install_hash} already running — exiting")
+        sys.exit(0)
+
+    # Load the specific installation
     installations = load_installations()
-    if not installations:
-        print("⚠️  No installations configured. Add one via the AbletonRPC app.")
-        # Keep running — the config file may appear later
-        while True:
-            time.sleep(30)
-            installations = load_installations()
-            if installations:
-                break
+    installation  = next((i for i in installations if i.install_hash == install_hash), None)
 
-    print(f"🚀 Starting daemon for {len(installations)} installation(s)")
+    if not installation:
+        print(f"❌ Installation not found: {install_hash}")
+        sys.exit(1)
 
-    threads = []
-    for install in installations:
-        app = AbletonRPCApp(install)
-        t = threading.Thread(target=app.run, daemon=True, name=install.name)
-        t.start()
-        threads.append(t)
-
-    # Block until all threads finish (they shouldn't unless something goes very wrong)
-    for t in threads:
-        t.join()
+    app = AbletonRPCApp(installation)
+    app.run()   # blocks forever
 
 
 def main():
@@ -464,36 +649,32 @@ def main():
 
     if not args:
         print("Usage:")
-        print("  ableton_rpc.py --daemon            Run monitoring daemon")
-        print("  ableton_rpc.py --install <hash>    Install FauxMIDI for installation")
-        print("  ableton_rpc.py --remove  <hash>    Remove FauxMIDI for installation")
+        print("  ableton_rpc.py --daemon <hash>     Run daemon for one installation")
+        print("  ableton_rpc.py --install <hash>    Install FauxMIDI")
+        print("  ableton_rpc.py --remove  <hash>    Remove FauxMIDI")
         sys.exit(1)
 
-    if args[0] == "--daemon":
-        # Graceful shutdown on SIGTERM
+    if args[0] == "--daemon" and len(args) >= 2:
         signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
-        run_daemon()
+        run_daemon(args[1])
 
     elif args[0] == "--install" and len(args) >= 2:
-        install_hash = args[1]
         installs = load_installations()
-        match = next((i for i in installs if i.install_hash == install_hash), None)
+        match = next((i for i in installs if i.install_hash == args[1]), None)
         if not match:
-            print(f"❌ Installation not found: {install_hash}")
+            print(f"❌ Installation not found: {args[1]}")
             sys.exit(1)
-        success = install_faux_midi(match)
-        sys.exit(0 if success else 1)
+        sys.exit(0 if install_faux_midi(match) else 1)
 
     elif args[0] == "--remove" and len(args) >= 2:
-        install_hash = args[1]
         installs = load_installations()
-        match = next((i for i in installs if i.install_hash == install_hash), None)
+        match = next((i for i in installs if i.install_hash == args[1]), None)
         if match:
             remove_faux_midi(match)
         sys.exit(0)
 
     else:
-        print(f"Unknown argument: {args[0]}")
+        print(f"Unknown arguments: {args}")
         sys.exit(1)
 
 

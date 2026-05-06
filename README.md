@@ -4,7 +4,7 @@
   <img src="https://i.ibb.co/V9NbLcY/ableton-image-beeg.png" alt="AbletonRPC logo">
 </p>
 
-Unofficial Ableton Live Discord rich presence for macOS — now powered by a native Swift app.
+Unofficial Ableton Live Discord rich presence for macOS — powered by a native Swift app and a Python daemon.
 
 ## Main UI
 
@@ -45,7 +45,7 @@ cd AbletonRPC/AbletonRPC-GUI
 ./build.sh --install
 ```
 
-`build.sh` handles everything: installs `xcodegen` via Homebrew, generates the Xcode project, builds the app, and copies it to `/Applications`. Xcode must be installed (Command Line Tools alone are not enough).
+`build.sh` handles everything: installs `xcodegen` via Homebrew, generates the Xcode project, builds the app, bundles the Python runtime, and copies it to `/Applications`. Xcode must be installed (Command Line Tools alone are not enough).
 
 ---
 
@@ -69,6 +69,19 @@ cd AbletonRPC/AbletonRPC-GUI
 
 ---
 
+## What shows in your presence
+
+As of v3.1.0, AbletonRPC surfaces track and device information alongside the project name and playback state:
+
+| Field | Example |
+|-------|---------|
+| Details | `My Project — Kick Drum [MIDI]` |
+| State | `Playing · 120 BPM · Compressor` |
+
+The currently selected track name, type (Audio/MIDI), and active device are detected automatically via the FauxMIDI MIDI Remote Script. If no track or device is selected, the presence falls back gracefully to just the project name and playback state.
+
+---
+
 ## How it works
 
 ```
@@ -82,7 +95,7 @@ Daemon reads ~/Library/Application Support/AbletonRPC/installations.json
   ↓
 One monitoring thread per Ableton installation
   ↓
-FauxMIDI writes project name, tempo, and state to a log file
+FauxMIDI writes project name, tempo, state, track, and device to a log file
   ↓
 Daemon reads log file → updates Discord Rich Presence via pypresence
 ```
@@ -93,7 +106,31 @@ The helper is a native Swift app that manages the Python daemon's lifecycle — 
 
 ## Multiple installations
 
-AbletonRPC supports running multiple Ableton versions simultaneously (e.g. Live 11 and Live 12). Each installation gets its own monitoring thread and log file. Discord will always show the version that is actively playing or recording.
+AbletonRPC supports running multiple Ableton versions simultaneously (e.g. Live 11 and Live 12, or stable and beta). Each installation gets its own monitoring thread and log file. Discord will always show the version that is actively playing or recording.
+
+---
+
+## Upgrading
+
+### v3.0.0 → v3.1.0
+
+Drop-in upgrade — no reinstall required. Replace `ableton_rpc.py` in the bundle and restart the helper. To get track and device info in your presence, re-add your installations via the GUI so the updated FauxMIDI script gets reinstalled.
+
+### v1.x / v2.x → v3.x
+
+A clean reinstall is required. Run the following to wipe the old install:
+
+```bash
+pkill -f "AbletonRPCHelper" 2>/dev/null
+pkill -f "ableton_rpc.py" 2>/dev/null
+rm -f ~/Library/LaunchAgents/com.kiwi.AbletonRPC*.plist
+rm -f ~/Library/LaunchAgents/com.user.ableton-rpc.*.plist
+rm -rf /Applications/AbletonRPC.app
+rm -rf ~/Library/Application\ Support/AbletonRPC
+rm -rf "/Applications/Ableton Live 12 Suite.app/Contents/App-Resources/MIDI Remote Scripts/FauxMIDI"
+```
+
+Then install the latest release and add your installations again.
 
 ---
 
@@ -155,9 +192,9 @@ Same fix as above — remove and re-add the installation in the GUI.
 
 ---
 
-**Q. What Python version do I need?**
+**Q. Track and device info isn't showing in my presence.**
 
-Python 3.10 or later from [python.org](https://www.python.org/downloads/). The system Python (`/usr/bin/python3`) that ships with macOS is too old and has a broken Tk version. AbletonRPC will use `/usr/local/bin/python3` by default.
+You need to re-add your installation via the GUI so the updated FauxMIDI script (v3.1.0+) gets installed. The older script doesn't log track or device info.
 
 ---
 
@@ -169,7 +206,7 @@ Yes. See [Vesktop / alt-client support](#vesktop--alt-client-support) above.
 
 **Q. Have you tested this with the latest Ableton version?**
 
-Yes — tested with Ableton Live 12.4 Suite on macOS 26 Tahoe.
+Yes — tested with Ableton Live 12.4 Suite and 12.4 Beta on macOS 26 Tahoe.
 
 ---
 

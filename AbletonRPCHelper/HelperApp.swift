@@ -1,102 +1,170 @@
 import SwiftUI
+import Foundation
 
-// AbletonRPCHelper — runs as a Login Item via SMAppService.
-// Its only job: find ableton_rpc.py in the main app bundle and keep it running.
+// AbletonRPCHelper — background Login Item.
+// Launches one Python daemon process per configured installation,
+// restarts each independently on crash.
 
 @main
 struct HelperApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var delegate
-
     var body: some Scene {
-        // No windows — this is a background helper
         Settings { EmptyView() }
     }
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
-    var daemonProcess: Process?
-    var restartWorkItem: DispatchWorkItem?
+
+    // One supervisor per installation hash
+    var supervisors: [String: DaemonSupervisor] = [:]
+    var configWatchTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.setActivationPolicy(.prohibited) // hide from Dock and App Switcher
-        launchDaemon()
+        NSApp.setActivationPolicy(.prohibited)
+        startAll()
+        // Poll config every 30s so newly added installations start automatically
+        configWatchTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
+            self?.syncWithConfig()
+        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        restartWorkItem?.cancel()
-        daemonProcess?.terminate()
+        configWatchTimer?.invalidate()
+        supervisors.values.forEach { $0.stop() }
     }
 
-    // MARK: - Daemon management
+    // MARK: - Config sync
 
-    func launchDaemon() {
-        // The helper lives at:
-        //   AbletonRPC.app/Contents/Library/LoginItems/AbletonRPCHelper.app
-        // So the main bundle is 4 dirs up.
-        let helperBundle = Bundle.main.bundleURL
+    func startAll() {
+        let hashes = loadInstallationHashes()
+        for hash in hashes {
+            if supervisors[hash] == nil {
+                let sup = DaemonSupervisor(installHash: hash)
+                supervisors[hash] = sup
+                sup.start()
+            }
+        }
+    }
+
+    func syncWithConfig() {
+        let hashes = Set(loadInstallationHashes())
+        let running = Set(supervisors.keys)
+
+        // Start newly added installations
+        for hash in hashes.subtracting(running) {
+            let sup = DaemonSupervisor(installHash: hash)
+            supervisors[hash] = sup
+            sup.start()
+        }
+
+        // Stop removed installations
+        for hash in running.subtracting(hashes) {
+            supervisors[hash]?.stop()
+            supervisors.removeValue(forKey: hash)
+        }
+    }
+
+    func loadInstallationHashes() -> [String] {
+        let support = FileManager.default.urls(
+            for: .applicationSupportDirectory, in: .userDomainMask
+        ).first!
+        let configURL = support
+            .appendingPathComponent("AbletonRPC")
+            .appendingPathComponent("installations.json")
+
+        guard let data = try? Data(contentsOf: configURL),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let installs = json["installations"] as? [[String: Any]]
+        else { return [] }
+
+        return installs.compactMap { $0["install_hash"] as? String }
+    }
+}
+
+// MARK: - Per-installation daemon supervisor
+
+class DaemonSupervisor {
+    let installHash: String
+    private var process: Process?
+    private var restartWorkItem: DispatchWorkItem?
+    private var stopped = false
+
+    init(installHash: String) {
+        self.installHash = installHash
+    }
+
+    func start() {
+        stopped = false
+        launch()
+    }
+
+    func stop() {
+        stopped = true
+        restartWorkItem?.cancel()
+        process?.terminate()
+        process = nil
+    }
+
+    private func launch() {
+        guard !stopped else { return }
+
+        let helperBundle  = Bundle.main.bundleURL
         let mainAppBundle = helperBundle
-            .deletingLastPathComponent() // AbletonRPCHelper.app
-            .deletingLastPathComponent() // LoginItems/
-            .deletingLastPathComponent() // Library/
-            .deletingLastPathComponent() // Contents/
-                                         // → AbletonRPC.app
+            .deletingLastPathComponent()   // AbletonRPCHelper.app
+            .deletingLastPathComponent()   // LoginItems/
+            .deletingLastPathComponent()   // Library/
+            .deletingLastPathComponent()   // Contents/
+                                           // → AbletonRPC.app
 
         let scriptURL = mainAppBundle
             .appendingPathComponent("Contents/Resources/ableton_rpc.py")
 
         guard FileManager.default.fileExists(atPath: scriptURL.path) else {
-            print("⚠️  Could not find ableton_rpc.py at \(scriptURL.path)")
+            print("⚠️  [\(installHash)] ableton_rpc.py not found — retrying in 30s")
             scheduleRestart(after: 30)
             return
         }
 
-        let python = bestPython()
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: python)
-        process.arguments     = [scriptURL.path, "--daemon"]
-        process.environment   = daemonEnvironment()
+        let python = bestPython(mainAppBundle: mainAppBundle)
+        let proc   = Process()
+        proc.executableURL = URL(fileURLWithPath: python)
+        proc.arguments     = [scriptURL.path, "--daemon", installHash]
+        proc.environment   = daemonEnvironment()
 
-        process.terminationHandler = { [weak self] proc in
-            let code = proc.terminationStatus
-            print("🔄 Daemon exited (code \(code)) — restarting in 5s")
-            self?.daemonProcess = nil
-            self?.scheduleRestart(after: 5)
+        proc.terminationHandler = { [weak self] p in
+            guard let self = self, !self.stopped else { return }
+            let code = p.terminationStatus
+            print("🔄 [\(self.installHash)] Daemon exited (code \(code)) — restarting in 5s")
+            self.process = nil
+            self.scheduleRestart(after: 5)
         }
 
         do {
-            try process.run()
-            daemonProcess = process
-            print("🚀 Daemon launched (PID \(process.processIdentifier))")
+            try proc.run()
+            process = proc
+            print("🚀 [\(installHash)] Daemon launched (PID \(proc.processIdentifier))")
         } catch {
-            print("⚠️  Daemon launch failed: \(error)")
+            print("⚠️  [\(installHash)] Launch failed: \(error) — retrying in 10s")
             scheduleRestart(after: 10)
         }
     }
 
     private func scheduleRestart(after seconds: TimeInterval) {
         restartWorkItem?.cancel()
-        let item = DispatchWorkItem { [weak self] in self?.launchDaemon() }
+        let item = DispatchWorkItem { [weak self] in self?.launch() }
         restartWorkItem = item
         DispatchQueue.main.asyncAfter(deadline: .now() + seconds, execute: item)
     }
 
     // MARK: - Helpers
 
-    private func bestPython() -> String {
-        // Prefer the Python bundled inside our own app bundle
-        let helperBundle = Bundle.main.bundleURL
-        let mainAppBundle = helperBundle
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-        let bundledPython = mainAppBundle
+    private func bestPython(mainAppBundle: URL) -> String {
+        let bundled = mainAppBundle
             .appendingPathComponent("Contents/Resources/python/bin/python3")
             .path
-        if FileManager.default.isExecutableFile(atPath: bundledPython) {
-            return bundledPython
+        if FileManager.default.isExecutableFile(atPath: bundled) {
+            return bundled
         }
-        // Fall back to system Python
         let candidates = [
             "/usr/local/bin/python3.14",
             "/usr/local/bin/python3",

@@ -132,8 +132,6 @@ class InstallationManager: ObservableObject {
         let plist: [String: Any] = [
             "Label": Self.launchAgentLabel,
             "ProgramArguments": [helperPath],
-            // Pass HOME and TMPDIR explicitly so the Swift helper always gets
-            // the correct user environment regardless of launchd session timing.
             "EnvironmentVariables": [
                 "HOME":   NSHomeDirectory(),
                 "TMPDIR": NSTemporaryDirectory(),

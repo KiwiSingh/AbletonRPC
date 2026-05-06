@@ -33,9 +33,9 @@ struct ContentView: View {
 
     private var header: some View {
         VStack(spacing: 2) {
-            Text("Ableton Discord RPC v3.0.0")
+            Text("Ableton Discord RPC v3.1.0")
                 .font(.system(size: 22, weight: .bold))
-            Text("Brand New Day")
+            Text("One More Day")
                 .font(.system(size: 13))
                 .foregroundColor(.accentColor)
         }
@@ -122,7 +122,6 @@ struct ContentView: View {
             }
             .buttonStyle(.bordered)
 
-            // Helper status badge
             HStack(spacing: 4) {
                 Circle()
                     .fill(manager.helperStatus == .running ? Color.green : Color.orange)
