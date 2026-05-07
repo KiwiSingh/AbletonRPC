@@ -154,7 +154,13 @@ class FauxMIDI(ControlSurface):
 
         try:
             self._debug_log(f"FauxMIDI initializing for {self.installation_name}...")
-            self.song = Live.Application.get_application().get_document()
+            self.song     = Live.Application.get_application().get_document()
+            self.app_view = Live.Application.get_application().view
+            # Cached state — updated by listeners on main thread, read by background thread
+            self._loop_on      = bool(getattr(self.song, "loop", False))
+            self._is_session   = False
+            self._scene_name   = None
+            self._time_sig     = None
             self._setup_listeners()
             self._debug_log("Listeners setup complete")
             self._start_name_monitor()
@@ -177,20 +183,32 @@ class FauxMIDI(ControlSurface):
             pass
 
     def _start_name_monitor(self):
+        # All variants Ableton may return for an unsaved/unnamed project
+        UNTITLED = {"Unsaved Project", "Untitled Project", "Untitled", ""}
+
         def name_monitor():
             while True:
                 try:
                     time.sleep(2)
                     current_name = self._get_enhanced_project_name()
-                    if (current_name == "Unsaved Project"
+
+                    # Never overwrite a real project name with any untitled variant
+                    if (current_name in UNTITLED
                             and self.last_project_name
-                            and self.last_project_name != "Unsaved Project"):
+                            and self.last_project_name not in UNTITLED):
                         continue
+
                     if current_name != self.last_project_name:
-                        self._debug_log(f"Project name changed: \'{self.last_project_name}\' -> \'{current_name}\'")
+                        self._debug_log(f"Project name changed: '{self.last_project_name}' -> '{current_name}'")
                         self.last_project_name = current_name
                         self.log_state()
+
                 except Exception as e:
+                    err = str(e)
+                    # self.song C++ object has been invalidated — this instance is dead
+                    if "TPyHandle" in err or "did not match C++ signature" in err:
+                        self._debug_log("Song reference invalidated — stopping name monitor")
+                        return
                     self._debug_log(f"Name monitor error: {e}")
                     time.sleep(5)
 
@@ -218,6 +236,45 @@ class FauxMIDI(ControlSurface):
             self._debug_log(f"Enhanced name detection error: {e}")
             return "Unsaved Project"
 
+    def _on_loop_changed(self):
+        new_val = bool(getattr(self.song, "loop", False))
+        if new_val != self._loop_on:
+            self._loop_on = new_val
+            self._debug_log(f"Loop changed: {self._loop_on}")
+            self.log_state()
+
+    def _on_view_changed(self):
+        focused = getattr(self.app_view, "focused_document_view", "")
+        new_is_session = (focused == "Session")
+        if new_is_session != self._is_session:
+            self._is_session = new_is_session
+            self._debug_log(f"View changed: focused_document_view={repr(focused)} is_session={self._is_session}")
+            self._update_scene()
+            self.log_state()
+        else:
+            # Same view — seed _is_session silently on init without spamming log_state
+            self._is_session = new_is_session
+
+    def _on_scene_changed(self):
+        self._update_scene()
+        self.log_state()
+
+    def _on_time_sig_changed(self):
+        self._time_sig = self._get_time_sig()
+        self.log_state()
+
+    def _update_scene(self):
+        try:
+            scene = getattr(self.song.view, "selected_scene", None)
+            if scene is not None:
+                name = getattr(scene, "name", None)
+                self._scene_name = name.strip() if name and name.strip() else None
+            else:
+                self._scene_name = None
+        except Exception as e:
+            self._debug_log(f"Scene update error: {e}")
+            self._scene_name = None
+
     def _setup_listeners(self):
         try:
             if hasattr(self.song, "name_has_listener") and not self.song.name_has_listener(self.log_state):
@@ -228,23 +285,42 @@ class FauxMIDI(ControlSurface):
                 self.song.add_is_playing_listener(self.log_state)
             if hasattr(self.song, "record_mode_has_listener") and not self.song.record_mode_has_listener(self.log_state):
                 self.song.add_record_mode_listener(self.log_state)
-            # Project key listeners (v3.3+) — fire whenever the user changes key or scale
+            # Key listeners (v3.3+)
             try:
                 if hasattr(self.song, "root_note_has_listener") and not self.song.root_note_has_listener(self.log_state):
                     self.song.add_root_note_listener(self.log_state)
                 if hasattr(self.song, "scale_name_has_listener") and not self.song.scale_name_has_listener(self.log_state):
                     self.song.add_scale_name_listener(self.log_state)
             except Exception as e:
-                self._debug_log(f"Key listeners skipped (Live 11+ required): {e}")
-            # Track and device selection listeners (v3.1+)
+                self._debug_log(f"Key listeners skipped: {e}")
+            # v4.0 — loop, time sig, session record with dedicated callbacks (main thread safe)
+            try:
+                if hasattr(self.song, "loop_has_listener") and not self.song.loop_has_listener(self._on_loop_changed):
+                    self.song.add_loop_listener(self._on_loop_changed)
+                if hasattr(self.song, "signature_numerator_has_listener") and not self.song.signature_numerator_has_listener(self._on_time_sig_changed):
+                    self.song.add_signature_numerator_listener(self._on_time_sig_changed)
+                if hasattr(self.song, "signature_denominator_has_listener") and not self.song.signature_denominator_has_listener(self._on_time_sig_changed):
+                    self.song.add_signature_denominator_listener(self._on_time_sig_changed)
+                if hasattr(self.song, "session_record_has_listener") and not self.song.session_record_has_listener(self.log_state):
+                    self.song.add_session_record_listener(self.log_state)
+            except Exception as e:
+                self._debug_log(f"v4.0 song listeners skipped: {e}")
+            # v4.0 — view, scene, track/device with dedicated callbacks
             try:
                 view = self.song.view
+                if hasattr(self.app_view, "focused_document_view_has_listener") and not self.app_view.focused_document_view_has_listener(self._on_view_changed):
+                    self.app_view.add_focused_document_view_listener(self._on_view_changed)
+                if hasattr(view, "selected_scene_has_listener") and not view.selected_scene_has_listener(self._on_scene_changed):
+                    view.add_selected_scene_listener(self._on_scene_changed)
                 if hasattr(view, "selected_track_has_listener") and not view.selected_track_has_listener(self.log_state):
                     view.add_selected_track_listener(self.log_state)
                 if hasattr(view, "selected_device_has_listener") and not view.selected_device_has_listener(self.log_state):
                     view.add_selected_device_listener(self.log_state)
             except Exception as e:
-                self._debug_log(f"Track/device listener setup skipped: {e}")
+                self._debug_log(f"v4.0 view listeners skipped: {e}")
+            # Seed initial cached values on main thread
+            self._on_view_changed()
+            self._on_time_sig_changed()
         except Exception as e:
             self._debug_log(f"Listener setup error: {e}")
 
@@ -264,6 +340,84 @@ class FauxMIDI(ControlSurface):
         except Exception as e:
             self._debug_log(f"Key detection error: {e}")
             return None
+
+    def _get_time_sig(self):
+        """Return time signature string e.g. '7/8', or None."""
+        try:
+            num = getattr(self.song, "signature_numerator", None)
+            den = getattr(self.song, "signature_denominator", None)
+            if num is not None and den is not None:
+                return f"{int(num)}/{int(den)}"
+            return None
+        except Exception as e:
+            self._debug_log(f"Time sig error: {e}")
+            return None
+
+    def _get_scene_and_view(self):
+        """Read from cached instance vars updated by main-thread listeners."""
+        return self._scene_name, self._is_session
+
+    def _get_recording_status(self):
+        """Return detailed recording status — distinguishes arrangement vs clip recording."""
+        try:
+            record_mode    = getattr(self.song, "record_mode", False)      # arrangement record
+            session_record = getattr(self.song, "session_record", False)   # clip/session record
+            is_playing     = getattr(self.song, "is_playing", False)
+            if session_record:
+                return "Clip Recording"
+            if record_mode:
+                return "Recording"
+            if is_playing:
+                return "Playing"
+            return "Stopped"
+        except Exception as e:
+            self._debug_log(f"Recording status error: {e}")
+            return "Stopped"
+
+    def log_state(self):
+        try:
+            project = self._get_enhanced_project_name()
+            if (project == "Unsaved Project"
+                    and self.last_project_name
+                    and self.last_project_name != "Unsaved Project"):
+                project = self.last_project_name
+        except:
+            project = self.last_project_name or "Unsaved Project"
+
+        try:
+            tempo    = int(getattr(self.song, "tempo", 120))
+            state    = self._get_recording_status()
+            loop_on  = self._loop_on  # cached by _on_loop_changed listener on main thread
+
+            track_name, track_type, device_name = self._get_track_info()
+            key       = self._get_key()
+            time_sig  = self._time_sig  # cached by _on_time_sig_changed listener on main thread
+            scene_name, is_session = self._get_scene_and_view()  # reads cached _scene_name, _is_session
+
+            os.makedirs(os.path.dirname(self.log_file_path), exist_ok=True)
+            with open(self.log_file_path, "w", encoding="utf-8") as f:
+                f.write(f"PROJECT:{project}\\n")
+                f.write(f"TEMPO:{tempo}\\n")
+                f.write(f"STATE:{state}\\n")
+                f.write(f"INSTALLATION:{self.installation_name}\\n")
+                f.write(f"LOOP:{'1' if loop_on else '0'}\\n")
+                f.write(f"VIEW:{'Session' if is_session else 'Arrangement'}\\n")
+                if key:
+                    f.write(f"KEY:{key}\\n")
+                if time_sig:
+                    f.write(f"TIME_SIG:{time_sig}\\n")
+                if scene_name:
+                    f.write(f"SCENE:{scene_name}\\n")
+                if track_name:
+                    f.write(f"TRACK:{track_name}\\n")
+                if track_type:
+                    f.write(f"TRACK_TYPE:{track_type}\\n")
+                if device_name:
+                    f.write(f"DEVICE:{device_name}\\n")
+                f.flush()
+                os.fsync(f.fileno())
+        except Exception as e:
+            self._debug_log(f"log_state error: {e}")
 
     def _get_track_info(self):
         """Return (track_name, track_type, device_name) for the currently selected track.
@@ -329,61 +483,40 @@ class FauxMIDI(ControlSurface):
             self._debug_log(f"Track info error: {e}")
             return None, None, None
 
-    def log_state(self):
-        try:
-            project = self._get_enhanced_project_name()
-            if (project == "Unsaved Project"
-                    and self.last_project_name
-                    and self.last_project_name != "Unsaved Project"):
-                project = self.last_project_name
-        except:
-            project = self.last_project_name or "Unsaved Project"
-
-        try:
-            tempo = int(getattr(self.song, "tempo", 120))
-            is_playing = getattr(self.song, "is_playing", False)
-            record_mode = getattr(self.song, "record_mode", False)
-            state = "Recording" if record_mode else ("Playing" if is_playing else "Stopped")
-
-            track_name, track_type, device_name = self._get_track_info()
-            key = self._get_key()
-
-            os.makedirs(os.path.dirname(self.log_file_path), exist_ok=True)
-            with open(self.log_file_path, "w", encoding="utf-8") as f:
-                f.write(f"PROJECT:{project}\\n")
-                f.write(f"TEMPO:{tempo}\\n")
-                f.write(f"STATE:{state}\\n")
-                f.write(f"INSTALLATION:{self.installation_name}\\n")
-                if key:
-                    f.write(f"KEY:{key}\\n")
-                if track_name:
-                    f.write(f"TRACK:{track_name}\\n")
-                if track_type:
-                    f.write(f"TRACK_TYPE:{track_type}\\n")
-                if device_name:
-                    f.write(f"DEVICE:{device_name}\\n")
-                f.flush()
-                os.fsync(f.fileno())
-        except Exception as e:
-            self._debug_log(f"log_state error: {e}")
-
     def disconnect(self):
         try:
             self._debug_log("FauxMIDI disconnecting...")
-            for remove in ["remove_name_listener", "remove_tempo_listener",
-                           "remove_is_playing_listener", "remove_record_mode_listener",
-                           "remove_root_note_listener", "remove_scale_name_listener"]:
+            for attr, cb in [
+                ("remove_name_listener", self.log_state),
+                ("remove_tempo_listener", self.log_state),
+                ("remove_is_playing_listener", self.log_state),
+                ("remove_record_mode_listener", self.log_state),
+                ("remove_root_note_listener", self.log_state),
+                ("remove_scale_name_listener", self.log_state),
+                ("remove_loop_listener", self._on_loop_changed),
+                ("remove_signature_numerator_listener", self._on_time_sig_changed),
+                ("remove_signature_denominator_listener", self._on_time_sig_changed),
+                ("remove_session_record_listener", self.log_state),
+            ]:
                 try:
-                    if hasattr(self.song, remove):
-                        getattr(self.song, remove)(self.log_state)
+                    if hasattr(self.song, attr):
+                        getattr(self.song, attr)(cb)
                 except:
                     pass
             try:
+                if hasattr(self.app_view, "remove_focused_document_view_listener"):
+                    self.app_view.remove_focused_document_view_listener(self._on_view_changed)
                 view = self.song.view
-                if hasattr(view, "remove_selected_track_listener"):
-                    view.remove_selected_track_listener(self.log_state)
-                if hasattr(view, "remove_selected_device_listener"):
-                    view.remove_selected_device_listener(self.log_state)
+                for attr, cb in [
+                    ("remove_selected_track_listener", self.log_state),
+                    ("remove_selected_device_listener", self.log_state),
+                    ("remove_selected_scene_listener", self._on_scene_changed),
+                ]:
+                    try:
+                        if hasattr(view, attr):
+                            getattr(view, attr)(cb)
+                    except:
+                        pass
             except:
                 pass
         except Exception as e:
@@ -496,13 +629,14 @@ def _try_acquire_lock(install_hash: str, state: str) -> bool:
 
 class AbletonRPCApp:
     def __init__(self, installation):
-        self.installation = installation
-        self.rpc          = None
-        self.last_mtime   = 0
-        self.last_payload = None
-        self.start_time   = int(time.time())
-        self.was_running  = False
-        self.owns_lock    = False
+        self.installation      = installation
+        self.rpc               = None
+        self.last_mtime        = 0
+        self.last_content_hash = ""
+        self.last_payload      = None
+        self.start_time        = int(time.time())
+        self.was_running       = False
+        self.owns_lock         = False
 
     def run(self):
         print(f"🔍 [{self.installation.name}] Daemon started (PID {os.getpid()})")
@@ -572,25 +706,30 @@ class AbletonRPCApp:
             time.sleep(1)
             return
 
-        if mtime == self.last_mtime:
-            # Even with no change, refresh the lock while playing/recording
-            if self.owns_lock:
-                lock = _read_lock()
-                if lock.get("owner") == self.installation.install_hash:
-                    _write_lock(self.installation.install_hash,
-                                lock.get("state", "Stopped"))
-            time.sleep(3)
-            return
-
-        self.last_mtime = mtime
-        time.sleep(0.2)
-
+        # Read file and hash content — mtime alone has 1s precision on HFS+
+        # which causes missed updates when a single listener write happens
         try:
             with open(log_path, "r", encoding="utf-8") as f:
                 content = f.read()
         except OSError:
             time.sleep(0.5)
             return
+
+        import hashlib as _hl
+        content_hash = _hl.md5(content.encode()).hexdigest()
+
+        if mtime == self.last_mtime and content_hash == self.last_content_hash:
+            # No change — refresh lock while active
+            if self.owns_lock:
+                lock = _read_lock()
+                if lock.get("owner") == self.installation.install_hash:
+                    _write_lock(self.installation.install_hash,
+                                lock.get("state", "Stopped"))
+            time.sleep(1)
+            return
+
+        self.last_mtime        = mtime
+        self.last_content_hash = content_hash
 
         data = {}
         for line in content.splitlines():
@@ -603,29 +742,42 @@ class AbletonRPCApp:
         state      = data.get("STATE", "Stopped")
         inst_name  = data.get("INSTALLATION", self.installation.name)
         key        = data.get("KEY")
+        time_sig   = data.get("TIME_SIG")
+        scene      = data.get("SCENE")
         track      = data.get("TRACK")
         track_type = data.get("TRACK_TYPE")
         device     = data.get("DEVICE")
+        loop_on    = data.get("LOOP") == "1"
+        view       = data.get("VIEW", "Arrangement")
 
         # ── Acquire or check lock ──────────────────────────────────────────
         self.owns_lock = _try_acquire_lock(self.installation.install_hash, state)
         if not self.owns_lock:
-            time.sleep(3)
+            time.sleep(1)
             return
 
-        payload = (project, tempo, state, key, track, device)
+        payload = (project, tempo, state, key, time_sig, scene, track, device, loop_on, view)
         if payload == self.last_payload:
-            time.sleep(3)
+            time.sleep(1)
             return
         self.last_payload = payload
 
-        # ── Update Discord ─────────────────────────────────────────────────
+        # ── Build presence strings ─────────────────────────────────────────
         try:
+            def smart_truncate(text, limit):
+                """Truncate at a word boundary with ellipsis."""
+                if len(text) <= limit:
+                    return text
+                truncated = text[:limit - 1].rsplit(" ", 1)[0]
+                return truncated + "…"
+
+            # details line: "My Project — Kick Drum [MIDI]"
             if track:
                 type_tag = f" [{track_type}]" if track_type else ""
                 details  = f"{project} — {track}{type_tag}"
             else:
                 details  = project
+            details = smart_truncate(details, 128)
 
             # state line: "Playing · 120 BPM · C# Minor · Compressor"
             state_str = f"{state} · {tempo} BPM"
@@ -633,27 +785,51 @@ class AbletonRPCApp:
                 state_str += f" · {key}"
             if device:
                 state_str += f" · {device}"
+            state_str = smart_truncate(state_str, 128)
 
-            details   = details[:128]
-            state_str = state_str[:128]
+            # large_text tooltip (hover over album art):
+            # "Session View · Verse 2 · 7/8"  or "Arrangement View · 7/8"
+            tooltip_parts = [f"{view} View"]
+            if scene:
+                tooltip_parts.append(scene)
+            if time_sig:
+                tooltip_parts.append(time_sig)
+            large_tooltip = " · ".join(tooltip_parts)
 
-            self.rpc.update(
+            # small_image: loop indicator (requires loop_on/loop_off assets uploaded to Discord Portal)
+            small_img  = "loop_on"  if loop_on else "loop_off"
+            small_text = "Loop active" if loop_on else "Loop off"
+
+            update_kwargs = dict(
                 state=state_str,
                 details=details,
                 large_image="ableton_image",
-                large_text=inst_name,
+                large_text=large_tooltip,
+                small_image=small_img,
+                small_text=small_text,
                 start=self.start_time,
             )
+
+            try:
+                self.rpc.update(**update_kwargs)
+            except Exception:
+                # small_image asset probably not uploaded yet — retry without it
+                update_kwargs.pop("small_image", None)
+                update_kwargs.pop("small_text", None)
+                self.rpc.update(**update_kwargs)
+
             key_info    = f" | {key}" if key else ""
             track_info  = f" | {track}" if track else ""
             device_info = f" → {device}" if device else ""
-            print(f"📡 [{inst_name}] {project}{key_info}{track_info}{device_info} | {state} | {tempo} BPM")
+            loop_info   = " 🔁" if loop_on else ""
+            scene_info  = f" | {scene}" if scene else ""
+            print(f"📡 [{inst_name}] {project}{key_info}{track_info}{device_info}{scene_info}{loop_info} | {state} | {tempo} BPM | {view}")
         except Exception as e:
             print(f"⚠️  [{self.installation.name}] RPC update error: {e}")
             self.rpc      = None
             self.owns_lock = False
 
-        time.sleep(3)
+        time.sleep(1)
 
     def _is_running(self):
         try:
@@ -678,17 +854,42 @@ class AbletonRPCApp:
 
 def run_daemon(install_hash: str):
     """Run the daemon for a single installation identified by install_hash."""
-    # Prevent duplicate daemons for the same installation via a lockfile
     import fcntl
     lock_path = CONFIG_DIR / f"daemon-{install_hash}.lock"
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+
+    # PID-aware locking: if a lockfile exists, check if that PID is still alive.
+    # If the process is dead (stale lock), kill it and take over.
+    # If it's alive and IS us somehow, proceed. Otherwise exit.
+    if lock_path.exists():
+        try:
+            existing_pid = int(lock_path.read_text().strip())
+            if existing_pid != os.getpid():
+                try:
+                    os.kill(existing_pid, 0)  # Check if process exists
+                    # Process is alive — is it actually our script?
+                    proc = psutil.Process(existing_pid)
+                    cmdline = " ".join(proc.cmdline())
+                    if install_hash in cmdline and "ableton_rpc" in cmdline:
+                        print(f"⚠️  Daemon for {install_hash} already running (PID {existing_pid}) — exiting")
+                        sys.exit(0)
+                    else:
+                        # Different process somehow got our PID slot — steal it
+                        print(f"🔄 Stale lock for {install_hash} (PID {existing_pid} is unrelated) — taking over")
+                except (ProcessLookupError, psutil.NoSuchProcess):
+                    # Process is dead — stale lock, take over
+                    print(f"🔄 Clearing stale lock for {install_hash} (PID {existing_pid} is dead)")
+        except (ValueError, OSError):
+            pass  # Unreadable lockfile — proceed
+
+    # Acquire the lock
     try:
         lock_fd = open(lock_path, "w")
         fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         lock_fd.write(str(os.getpid()))
         lock_fd.flush()
     except (IOError, OSError):
-        print(f"⚠️  Daemon for {install_hash} already running — exiting")
+        print(f"⚠️  Could not acquire lock for {install_hash} — another instance just started")
         sys.exit(0)
 
     # Load the specific installation

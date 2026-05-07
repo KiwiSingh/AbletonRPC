@@ -61,7 +61,7 @@ cd AbletonRPC/AbletonRPC-GUI
    ![Setup flow](Step2.png)
 
 4. Click **Add Installation** — AbletonRPC installs the FauxMIDI script and registers the background helper automatically
-5. **Restart Ableton Live twice** — once to unload any previously loaded FauxMIDI, and again to load the new one cleanly. This is a known quirk of how Ableton handles MIDI Remote Script hot-swapping.
+5. **Restart Ableton Live twice** — once to fully unload any previously loaded FauxMIDI, and again to load the new one. Then go to **Preferences → MIDI** and set `FauxMIDI` as a Control Surface
 
    ![MIDI preferences](https://i.ibb.co/9pbMpW1/Ableton-MIDIprefs.png)
 
@@ -71,14 +71,20 @@ cd AbletonRPC/AbletonRPC-GUI
 
 ## What shows in your presence
 
-As of v3.1.0, AbletonRPC surfaces track and device information alongside the project name and playback state:
-
 | Field | Example |
 |-------|---------|
-| Details | `My Project — Kick Drum [MIDI]` |
-| State | `Playing · 120 BPM · Compressor` |
+| Details | `My Long Project Na… — Kick Drum [MIDI]` |
+| State | `Playing · 120 BPM · C# Minor · Compressor` |
+| Large image tooltip | `Session View · Verse 2 · 7/8` |
+| Small image | Loop on/off badge |
+| Small image tooltip | `Loop active` / `Loop off` |
 
-The currently selected track name, type (Audio/MIDI), and active device are detected automatically via the FauxMIDI MIDI Remote Script. If no track or device is selected, the presence falls back gracefully to just the project name and playback state.
+- **Details** — project name (word-boundary truncated if long) and selected track with type
+- **State** — playback status, tempo, project key, and active device
+- **Large image tooltip** — current view (Session/Arrangement), active scene name, time signature
+- **Small image** — live loop indicator badge (requires `loop_on` and `loop_off` assets uploaded to your Discord Developer Portal)
+
+All fields update live as you work — changing the key, switching scenes, toggling loop, or selecting a different track all fire immediately.
 
 ---
 
@@ -89,63 +95,59 @@ macOS Login
   ↓
 AbletonRPC Helper starts (via LaunchAgent)
   ↓
-Helper launches Python daemon with correct environment
+Helper launches one Python daemon per configured installation
   ↓
 Daemon reads ~/Library/Application Support/AbletonRPC/installations.json
   ↓
-One monitoring thread per Ableton installation
-  ↓
-FauxMIDI writes project name, tempo, state, track, and device to a log file
+FauxMIDI writes project name, tempo, state, key, time sig,
+scene, loop, view, track, and device to a log file
   ↓
 Daemon reads log file → updates Discord Rich Presence via pypresence
+  ↓
+Presence coordinator ensures only the active installation owns Discord
 ```
 
-The helper is a native Swift app that manages the Python daemon's lifecycle — restarting it on crash and ensuring it always runs with the correct environment variables. This replaces the fragile `launchctl` approach used in v1/v2.
+The helper is a native Swift app that manages the Python daemon's lifecycle — restarting it on crash and ensuring it always runs with the correct environment variables. Multiple installations (e.g. stable + beta) are coordinated by a priority system: Recording > Playing > Stopped.
 
 ---
 
 ## Multiple installations
 
-AbletonRPC supports running multiple Ableton versions simultaneously (e.g. Live 11 and Live 12, or stable and beta). Each installation gets its own monitoring thread and log file. Discord will always show the version that is actively playing or recording.
+AbletonRPC supports running multiple Ableton versions simultaneously (e.g. Live 11 and Live 12, or stable and beta). Each installation gets its own daemon process and log file. Discord will always show whichever version is actively recording or playing.
 
 ---
 
 ## Upgrading
 
-### Clearing stale daemons (do this after any upgrade)
+### Clearing stale daemons (part of every upgrade)
 
-After installing a new version, old daemon processes from the previous session may still be running. If your rich presence stops updating after an upgrade, run this first:
+After installing a new version, old daemon processes from the previous session may still be running and block the new ones. The correct order is:
 
-```bash
-pkill -f "ableton_rpc.py" 2>/dev/null
-rm -f ~/Library/Application\ Support/AbletonRPC/daemon-*.lock
-```
+1. Install the new version (`./build.sh --install` or replace the app)
+2. Re-add your installations via the GUI
+3. Restart Ableton once
+4. Clear stale daemons — click **Clear Stale Daemons** in the app, or:
+   ```bash
+   pkill -f "ableton_rpc.py" 2>/dev/null
+   rm -f ~/Library/Application\ Support/AbletonRPC/daemon-*.lock
+   ```
+5. Restart Ableton a second time
 
-The helper will automatically relaunch the correct daemons within a few seconds. You should then see one daemon process per configured installation:
+As of v4.0.0, daemons also self-heal stale locks on startup, but the manual clear after the first restart is still the most reliable approach.
 
-```bash
-ps aux | grep "ableton_rpc" | grep -v grep
-```
+### v3.3.0 → v4.0.0
 
-### v3.1.0 → v3.2.0
-
-Drop-in upgrade — no reinstall required. Rebuild and install:
-
-```bash
-./build.sh --install
-```
-
-Then clear stale daemons as above. Re-add your installations in the GUI to get the updated FauxMIDI script with smarter device reporting. **Restart Ableton twice** after re-adding — once to unload the old FauxMIDI, once to load the new one.
+Follow the upgrade order above. Re-add your installations to get the updated FauxMIDI script with view, loop, scene, and time signature support.
 
 ### v3.2.0 → v3.3.0
 
-Drop-in — rebuild and install, clear stale daemons, re-add installations. **Restart Ableton twice** after re-adding to get key detection working.
+Follow the upgrade order above. Re-add installations to get key detection.
 
-### v3.0.0 → v3.1.0
+### v3.0.0 / v3.1.0 → v3.2.0+
 
-Drop-in — replace `ableton_rpc.py` and rebuild. Clear stale daemons after installing. Re-add your installations to get the updated FauxMIDI script with track and device support.
+Follow the upgrade order above for each step.
 
-### v1.x / v2.x → v3.x
+### v1.x / v2.x → v3.x+
 
 A clean reinstall is required. Run the following to wipe the old install:
 
@@ -170,10 +172,10 @@ For those who prefer running the daemon directly:
 ```bash
 cd AbletonRPC-GUI
 pip install -r requirements.txt
-python3 Resources/ableton_rpc.py --daemon
+python3 Resources/ableton_rpc.py --daemon <install_hash>
 ```
 
-The daemon reads from `~/Library/Application Support/AbletonRPC/installations.json`. Add installations via the GUI first, then run the daemon from the CLI if preferred.
+Find your install hash in `~/Library/Application Support/AbletonRPC/installations.json`. Add installations via the GUI first, then run the daemon from the CLI if preferred.
 
 ---
 
@@ -209,28 +211,28 @@ Discord takes 10–60 minutes to propagate newly uploaded assets from the Develo
 
 ---
 
+**Q. The loop badge isn't showing.**
+
+Upload `loop_on.png` and `loop_off.png` to your Discord Developer Portal under **Rich Presence → Art Assets**, using exactly those filenames as the asset key names. Assets can take up to an hour to propagate.
+
+---
+
 **Q. The presence stopped working after updating AbletonRPC.**
 
-Stale daemon processes from the previous version are likely still running and blocking the new ones. Run:
+Stale daemon processes from the previous version are likely still running. Click **Clear Stale Daemons** in the AbletonRPC app — it handles this in one click. Or from the terminal:
 
 ```bash
 pkill -f "ableton_rpc.py" 2>/dev/null
 rm -f ~/Library/Application\ Support/AbletonRPC/daemon-*.lock
 ```
 
-The helper will relaunch everything automatically within a few seconds.
+The helper will relaunch everything automatically within a few seconds. As of v4.0.0, the daemon also detects and clears stale locks automatically on startup, so this should be much rarer going forward.
 
 ---
 
-**Q. I re-added my installation but the presence still shows the old project name / no key.**
+**Q. I re-added my installation but the presence still shows the old project name / no key / no scene.**
 
 Restart Ableton twice — once to fully unload the old FauxMIDI script, and again to load the new one. Ableton doesn't always hot-swap MIDI Remote Scripts cleanly on a single restart.
-
----
-
-**Q.** I applied a theme and now my transport status is stuck on "Stopped"?
-
-Same fix as above. Restart Ableton Live after applying the theme and loading a project.
 
 ---
 
@@ -248,7 +250,7 @@ Same fix as above — remove and re-add the installation in the GUI.
 
 **Q. Track and device info isn't showing in my presence.**
 
-You need to re-add your installation via the GUI so the updated FauxMIDI script (v3.1.0+) gets installed. The older script doesn't log track or device info.
+Re-add your installation via the GUI so the latest FauxMIDI script gets installed, then restart Ableton twice.
 
 ---
 
@@ -260,7 +262,7 @@ Yes. See [Vesktop / alt-client support](#vesktop--alt-client-support) above.
 
 **Q. Have you tested this with the latest Ableton version?**
 
-Yes — tested with Ableton Live 12.4 Suite and 12.4 Beta on macOS 26.5 Tahoe.
+Yes — tested with Ableton Live 12.4 Suite and 12.4 Beta on macOS 26 Tahoe.
 
 ---
 

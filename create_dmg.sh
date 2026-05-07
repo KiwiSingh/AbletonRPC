@@ -16,10 +16,12 @@ ok()   { echo -e "${GREEN}✓${NC} $*"; }
 warn() { echo -e "${YELLOW}⚠${NC}  $*"; }
 fail() { echo -e "${RED}✗${NC} $*"; exit 1; }
 
-VERSION="3.3.0"
+VERSION="4.0.0"
 APP_NAME="AbletonRPC"
 APP_PATH="build/Release/${APP_NAME}.app"
 DMG_NAME="${APP_NAME}-v${VERSION}.dmg"
+INSTALLER_SCRIPT="install_helper.applescript"
+INSTALLER_APP="Install AbletonRPC.app"
 
 echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║  AbletonRPC — DMG Creator                ║${NC}"
@@ -31,6 +33,19 @@ if [ ! -d "$APP_PATH" ]; then
     fail "App not found at $APP_PATH — run ./build.sh first"
 fi
 ok "Found $APP_PATH ($(du -sh "$APP_PATH" | cut -f1))"
+
+# ── Compile installer app ─────────────────────────────────────────────────
+log "Compiling installer app..."
+if [ ! -f "$INSTALLER_SCRIPT" ]; then
+    fail "install_helper.applescript not found — make sure it's in the project root"
+fi
+rm -rf "$INSTALLER_APP"
+osacompile -o "$INSTALLER_APP" "$INSTALLER_SCRIPT"
+if [ -d "$INSTALLER_APP" ]; then
+    ok "Installer app compiled: $INSTALLER_APP"
+else
+    fail "osacompile failed — could not build installer app"
+fi
 
 # ── Homebrew ──────────────────────────────────────────────────────────────
 log "Checking Homebrew..."
@@ -78,11 +93,13 @@ DMG_ARGS=(
     create-dmg
     --volname "$APP_NAME"
     --window-pos 200 120
-    --window-size 600 380
+    --window-size 660 400
     --icon-size 128
-    --icon "${APP_NAME}.app" 160 175
+    --icon "${APP_NAME}.app" 160 195
+    --icon "Install AbletonRPC.app" 480 195
     --hide-extension "${APP_NAME}.app"
-    --app-drop-link 430 175
+    --hide-extension "Install AbletonRPC.app"
+    --app-drop-link 320 195
     --no-internet-enable
     --skip-jenkins
 )
@@ -91,27 +108,28 @@ if [ "$USE_ICON" = true ]; then
     DMG_ARGS+=(--volicon "icon.icns")
 fi
 
-DMG_ARGS+=("$DMG_NAME" "$APP_PATH")
+# Try with create-dmg — stage both apps in a temp folder
+STAGING=$(mktemp -d)
+cp -R "$APP_PATH" "$STAGING/"
+cp -R "$INSTALLER_APP" "$STAGING/"
 
-# Try with create-dmg first
-if "${DMG_ARGS[@]}" 2>&1 | grep -v "^$"; then
-    true  # succeeded
+if "${DMG_ARGS[@]}" "$DMG_NAME" "$STAGING/" 2>&1 | grep -v "^$"; then
+    true
 fi
 
-# Fallback to plain hdiutil if create-dmg fails
+# Fallback to plain hdiutil
 if [ ! -f "$DMG_NAME" ]; then
     warn "create-dmg had issues — falling back to hdiutil..."
-    STAGING=$(mktemp -d)
-    cp -R "$APP_PATH" "$STAGING/"
     ln -s /Applications "$STAGING/Applications"
     hdiutil create \
         -volname "$APP_NAME" \
         -srcfolder "$STAGING" \
         -ov -format UDZO \
         "$DMG_NAME"
-    rm -rf "$STAGING"
     ok "Created DMG via hdiutil fallback"
 fi
+
+rm -rf "$STAGING"
 
 [ -f "$DMG_NAME" ] || fail "DMG creation failed"
 
@@ -126,9 +144,8 @@ echo -e "${GREEN}╚════════════════════
 echo ""
 echo "File: $DMG_NAME"
 echo ""
-echo "Users installing from GitHub should run:"
-echo "  xattr -rd com.apple.quarantine AbletonRPC.app"
-echo "Or simply right-click → Open on first launch."
+echo "Users: open the DMG and run 'Install AbletonRPC' — it handles"
+echo "copying to /Applications and removing the Gatekeeper restriction."
 echo ""
 echo "Upload $DMG_NAME to your GitHub release."
 echo ""

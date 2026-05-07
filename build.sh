@@ -100,8 +100,8 @@ cat > AbletonRPC/Info.plist << 'PLIST'
 <key>CFBundleName</key><string>AbletonRPC</string>
 <key>CFBundleDisplayName</key><string>AbletonRPC</string>
 <key>CFBundleIdentifier</key><string>com.kiwi.AbletonRPC</string>
-<key>CFBundleVersion</key><string>3.3.0</string>
-<key>CFBundleShortVersionString</key><string>3.3.0</string>
+<key>CFBundleVersion</key><string>4.0.0</string>
+<key>CFBundleShortVersionString</key><string>4.0.0</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>
 <key>CFBundleIconFile</key><string>icon</string>
@@ -118,8 +118,8 @@ cat > AbletonRPCHelper/Info.plist << 'PLIST'
 <key>CFBundleName</key><string>AbletonRPCHelper</string>
 <key>CFBundleDisplayName</key><string>AbletonRPC Helper</string>
 <key>CFBundleIdentifier</key><string>com.kiwi.AbletonRPC.Helper</string>
-<key>CFBundleVersion</key><string>3.3.0</string>
-<key>CFBundleShortVersionString</key><string>3.3.0</string>
+<key>CFBundleVersion</key><string>4.0.0</string>
+<key>CFBundleShortVersionString</key><string>4.0.0</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>
 <key>NSPrincipalClass</key><string>NSApplication</string>
@@ -288,6 +288,14 @@ ok "Quarantine cleared"
 # ── Install to /Applications ──────────────────────────────────────────────
 if [[ "$1" == "--install" ]]; then
     log "Installing to /Applications..."
+
+    # Kill stale daemons and clear locks before replacing the app
+    log "Clearing stale daemons..."
+    pkill -f "ableton_rpc.py" 2>/dev/null || true
+    rm -f ~/Library/Application\ Support/AbletonRPC/daemon-*.lock 2>/dev/null || true
+    sleep 1
+    ok "Stale daemons cleared"
+
     if [ -d "/Applications/AbletonRPC.app" ]; then
         # Unload any existing LaunchAgent before replacing the app
         PLIST="$HOME/Library/LaunchAgents/com.kiwi.AbletonRPC.Helper.plist"

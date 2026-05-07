@@ -33,9 +33,9 @@ struct ContentView: View {
 
     private var header: some View {
         VStack(spacing: 2) {
-            Text("Ableton Discord RPC v3.3.0")
+            Text("Ableton Discord RPC v4.0.0")
                 .font(.system(size: 22, weight: .bold))
-            Text("King In Black")
+            Text("Age of Apocalypse")
                 .font(.system(size: 13))
                 .foregroundColor(.accentColor)
         }
@@ -115,6 +115,12 @@ struct ContentView: View {
             .tint(.red)
             .disabled(selectedId == nil)
 
+            Button { clearStaleDaemons() } label: {
+                Label("Clear Stale Daemons", systemImage: "arrow.counterclockwise")
+            }
+            .buttonStyle(.bordered)
+            .help("Kills any leftover daemon processes and clears lock files. Use this if your rich presence stops updating after an upgrade.")
+
             Spacer()
 
             Button { manager.refreshHelperStatus() } label: {
@@ -159,6 +165,35 @@ struct ContentView: View {
         manager.remove(install)
         selectedId = nil
         alertMessage = "'\(install.name)' removed.\n\nPlease restart Ableton Live to complete the uninstall."
+        showAlert = true
+    }
+
+    private func clearStaleDaemons() {
+        // pkill all ableton_rpc.py processes
+        let pkill = Process()
+        pkill.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
+        pkill.arguments = ["-f", "ableton_rpc.py"]
+        try? pkill.run()
+        pkill.waitUntilExit()
+
+        // Remove all daemon lock files
+        let lockDir = FileManager.default.urls(
+            for: .applicationSupportDirectory, in: .userDomainMask
+        ).first!.appendingPathComponent("AbletonRPC")
+
+        if let files = try? FileManager.default.contentsOfDirectory(
+            at: lockDir, includingPropertiesForKeys: nil
+        ) {
+            for file in files where file.lastPathComponent.hasPrefix("daemon-") && file.pathExtension == "lock" {
+                try? FileManager.default.removeItem(at: file)
+            }
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            self.manager.refreshHelperStatus()
+        }
+
+        alertMessage = "Stale daemons cleared.\n\nThe helper will relaunch fresh daemons automatically."
         showAlert = true
     }
 }
