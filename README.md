@@ -228,6 +228,12 @@ Restart Ableton twice — once to fully unload the old FauxMIDI script, and agai
 
 ---
 
+**Q.** I applied a theme and now my transport status is stuck on "Stopped"?
+
+Same fix as above. Restart Ableton Live after applying the theme and loading a project.
+
+---
+
 **Q. The presence stopped working after I updated Ableton.**
 
 Ableton updates sometimes replace the MIDI Remote Scripts folder. Open the AbletonRPC GUI, remove the installation, and add it again to reinstall FauxMIDI.
