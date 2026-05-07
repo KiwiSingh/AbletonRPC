@@ -260,7 +260,7 @@ Yes. See [Vesktop / alt-client support](#vesktop--alt-client-support) above.
 
 **Q. Have you tested this with the latest Ableton version?**
 
-Yes — tested with Ableton Live 12.4 Suite and 12.4 Beta on macOS 26 Tahoe.
+Yes — tested with Ableton Live 12.4 Suite and 12.4 Beta on macOS 26.5 Tahoe.
 
 ---
 
