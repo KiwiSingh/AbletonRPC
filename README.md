@@ -33,8 +33,8 @@ Python is bundled inside the app — no separate installation required.
 ### Using the pre-built app (recommended)
 
 1. Download the latest release from the [Releases](https://github.com/KiwiSingh/AbletonRPC/releases) page
-2. Unzip and move `AbletonRPC.app` to your Applications folder
-3. Right-click → Open on first launch to bypass Gatekeeper
+2. Unzip and move `AbletonRPC.app` to your Applications folder. Or use the `Install AbletonRPC` helper to install and bypass Gatekeeper shenanigans.
+3. Right-click → Open on first launch to bypass Gatekeeper. Skip this step if you used the install helper.
 4. Click **Add Installation** and follow the setup flow
 
 ### Building from source
@@ -262,7 +262,7 @@ Yes. See [Vesktop / alt-client support](#vesktop--alt-client-support) above.
 
 **Q. Have you tested this with the latest Ableton version?**
 
-Yes — tested with Ableton Live 12.4 Suite and 12.4 Beta on macOS 26 Tahoe.
+Yes — tested with Ableton Live 12.4 Suite and 12.4 Beta on macOS 26.5 Tahoe.
 
 ---
 
