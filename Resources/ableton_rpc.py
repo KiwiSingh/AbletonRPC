@@ -228,6 +228,14 @@ class FauxMIDI(ControlSurface):
                 self.song.add_is_playing_listener(self.log_state)
             if hasattr(self.song, "record_mode_has_listener") and not self.song.record_mode_has_listener(self.log_state):
                 self.song.add_record_mode_listener(self.log_state)
+            # Project key listeners (v3.3+) — fire whenever the user changes key or scale
+            try:
+                if hasattr(self.song, "root_note_has_listener") and not self.song.root_note_has_listener(self.log_state):
+                    self.song.add_root_note_listener(self.log_state)
+                if hasattr(self.song, "scale_name_has_listener") and not self.song.scale_name_has_listener(self.log_state):
+                    self.song.add_scale_name_listener(self.log_state)
+            except Exception as e:
+                self._debug_log(f"Key listeners skipped (Live 11+ required): {e}")
             # Track and device selection listeners (v3.1+)
             try:
                 view = self.song.view
@@ -239,6 +247,23 @@ class FauxMIDI(ControlSurface):
                 self._debug_log(f"Track/device listener setup skipped: {e}")
         except Exception as e:
             self._debug_log(f"Listener setup error: {e}")
+
+    def _get_key(self):
+        """Return a human-readable key string e.g. 'C# Minor', or None if unavailable."""
+        NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F",
+                      "F#", "G", "G#", "A", "A#", "B"]
+        try:
+            root = getattr(self.song, "root_note", None)
+            scale = getattr(self.song, "scale_name", None)
+            if root is None:
+                return None
+            note = NOTE_NAMES[int(root) % 12]
+            if scale:
+                return f"{note} {scale}"
+            return note
+        except Exception as e:
+            self._debug_log(f"Key detection error: {e}")
+            return None
 
     def _get_track_info(self):
         """Return (track_name, track_type, device_name) for the currently selected track.
@@ -321,6 +346,7 @@ class FauxMIDI(ControlSurface):
             state = "Recording" if record_mode else ("Playing" if is_playing else "Stopped")
 
             track_name, track_type, device_name = self._get_track_info()
+            key = self._get_key()
 
             os.makedirs(os.path.dirname(self.log_file_path), exist_ok=True)
             with open(self.log_file_path, "w", encoding="utf-8") as f:
@@ -328,6 +354,8 @@ class FauxMIDI(ControlSurface):
                 f.write(f"TEMPO:{tempo}\\n")
                 f.write(f"STATE:{state}\\n")
                 f.write(f"INSTALLATION:{self.installation_name}\\n")
+                if key:
+                    f.write(f"KEY:{key}\\n")
                 if track_name:
                     f.write(f"TRACK:{track_name}\\n")
                 if track_type:
@@ -343,7 +371,8 @@ class FauxMIDI(ControlSurface):
         try:
             self._debug_log("FauxMIDI disconnecting...")
             for remove in ["remove_name_listener", "remove_tempo_listener",
-                           "remove_is_playing_listener", "remove_record_mode_listener"]:
+                           "remove_is_playing_listener", "remove_record_mode_listener",
+                           "remove_root_note_listener", "remove_scale_name_listener"]:
                 try:
                     if hasattr(self.song, remove):
                         getattr(self.song, remove)(self.log_state)
@@ -573,6 +602,7 @@ class AbletonRPCApp:
         tempo      = data.get("TEMPO", "120")
         state      = data.get("STATE", "Stopped")
         inst_name  = data.get("INSTALLATION", self.installation.name)
+        key        = data.get("KEY")
         track      = data.get("TRACK")
         track_type = data.get("TRACK_TYPE")
         device     = data.get("DEVICE")
@@ -580,11 +610,10 @@ class AbletonRPCApp:
         # ── Acquire or check lock ──────────────────────────────────────────
         self.owns_lock = _try_acquire_lock(self.installation.install_hash, state)
         if not self.owns_lock:
-            # Another installation owns the presence — don't update Discord
             time.sleep(3)
             return
 
-        payload = (project, tempo, state, track, device)
+        payload = (project, tempo, state, key, track, device)
         if payload == self.last_payload:
             time.sleep(3)
             return
@@ -598,7 +627,10 @@ class AbletonRPCApp:
             else:
                 details  = project
 
+            # state line: "Playing · 120 BPM · C# Minor · Compressor"
             state_str = f"{state} · {tempo} BPM"
+            if key:
+                state_str += f" · {key}"
             if device:
                 state_str += f" · {device}"
 
@@ -612,9 +644,10 @@ class AbletonRPCApp:
                 large_text=inst_name,
                 start=self.start_time,
             )
+            key_info    = f" | {key}" if key else ""
             track_info  = f" | {track}" if track else ""
             device_info = f" → {device}" if device else ""
-            print(f"📡 [{inst_name}] {project}{track_info}{device_info} | {state} | {tempo} BPM")
+            print(f"📡 [{inst_name}] {project}{key_info}{track_info}{device_info} | {state} | {tempo} BPM")
         except Exception as e:
             print(f"⚠️  [{self.installation.name}] RPC update error: {e}")
             self.rpc      = None

@@ -61,7 +61,7 @@ cd AbletonRPC/AbletonRPC-GUI
    ![Setup flow](Step2.png)
 
 4. Click **Add Installation** — AbletonRPC installs the FauxMIDI script and registers the background helper automatically
-5. Restart Ableton Live, then go to **Preferences → MIDI** and set `FauxMIDI` as a Control Surface
+5. **Restart Ableton Live twice** — once to unload any previously loaded FauxMIDI, and again to load the new one cleanly. This is a known quirk of how Ableton handles MIDI Remote Script hot-swapping.
 
    ![MIDI preferences](https://i.ibb.co/9pbMpW1/Ableton-MIDIprefs.png)
 
@@ -135,7 +135,11 @@ Drop-in upgrade — no reinstall required. Rebuild and install:
 ./build.sh --install
 ```
 
-Then clear stale daemons as above. Re-add your installations in the GUI to get the updated FauxMIDI script with smarter device reporting.
+Then clear stale daemons as above. Re-add your installations in the GUI to get the updated FauxMIDI script with smarter device reporting. **Restart Ableton twice** after re-adding — once to unload the old FauxMIDI, once to load the new one.
+
+### v3.2.0 → v3.3.0
+
+Drop-in — rebuild and install, clear stale daemons, re-add installations. **Restart Ableton twice** after re-adding to get key detection working.
 
 ### v3.0.0 → v3.1.0
 
@@ -215,6 +219,12 @@ rm -f ~/Library/Application\ Support/AbletonRPC/daemon-*.lock
 ```
 
 The helper will relaunch everything automatically within a few seconds.
+
+---
+
+**Q. I re-added my installation but the presence still shows the old project name / no key.**
+
+Restart Ableton twice — once to fully unload the old FauxMIDI script, and again to load the new one. Ableton doesn't always hot-swap MIDI Remote Scripts cleanly on a single restart.
 
 ---
 
