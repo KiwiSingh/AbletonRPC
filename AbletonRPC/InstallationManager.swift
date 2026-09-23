@@ -60,8 +60,9 @@ class InstallationManager: ObservableObject {
             return bundled.path
         }
         let candidates = [
-            "/usr/local/bin/python3.14",
             "/usr/local/bin/python3",
+            "/opt/homebrew/bin/python3.13",
+            "/usr/local/bin/python3.13",
             "/usr/bin/python3",
         ]
         return candidates.first { FileManager.default.isExecutableFile(atPath: $0) }
@@ -258,6 +259,7 @@ class InstallationManager: ObservableObject {
         env["HOME"]   = NSHomeDirectory()
         env["TMPDIR"] = NSTemporaryDirectory()
         env["PATH"]   = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+        env["PYTHONDONTWRITEBYTECODE"] = "1"
         return env
     }
 }

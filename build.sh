@@ -3,7 +3,7 @@
 # No paid Apple Developer account required — uses ad-hoc signing.
 # Usage: ./build.sh [--install]   (--install also copies .app to /Applications)
 
-set -e
+set -eo pipefail
 
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
@@ -48,10 +48,7 @@ ok "xcodegen $(xcodegen --version 2>/dev/null | head -1)"
 
 # ── Python dependencies ───────────────────────────────────────────────────
 log "Checking Python dependencies..."
-PYTHON3="/usr/local/bin/python3"
-if ! command -v "$PYTHON3" &>/dev/null; then
-    PYTHON3="python3"
-fi
+PYTHON3="$(command -v python3)"
 
 MISSING=()
 while IFS='>=' read -r pkg _; do
@@ -100,8 +97,8 @@ cat > AbletonRPC/Info.plist << 'PLIST'
 <key>CFBundleName</key><string>AbletonRPC</string>
 <key>CFBundleDisplayName</key><string>AbletonRPC</string>
 <key>CFBundleIdentifier</key><string>com.kiwi.AbletonRPC</string>
-<key>CFBundleVersion</key><string>4.0.0</string>
-<key>CFBundleShortVersionString</key><string>4.0.0</string>
+<key>CFBundleVersion</key><string>4.0.1</string>
+<key>CFBundleShortVersionString</key><string>4.0.1</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>
 <key>CFBundleIconFile</key><string>icon</string>
@@ -118,8 +115,8 @@ cat > AbletonRPCHelper/Info.plist << 'PLIST'
 <key>CFBundleName</key><string>AbletonRPCHelper</string>
 <key>CFBundleDisplayName</key><string>AbletonRPC Helper</string>
 <key>CFBundleIdentifier</key><string>com.kiwi.AbletonRPC.Helper</string>
-<key>CFBundleVersion</key><string>4.0.0</string>
-<key>CFBundleShortVersionString</key><string>4.0.0</string>
+<key>CFBundleVersion</key><string>4.0.1</string>
+<key>CFBundleShortVersionString</key><string>4.0.1</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>
 <key>NSPrincipalClass</key><string>NSApplication</string>
@@ -135,19 +132,21 @@ ok "Info.plist files written"
 BUILD_DIR="build/Release"
 log "Building AbletonRPC.app (ad-hoc signed)..."
 
+# Files copied from downloaded archives or external volumes can retain Finder
+# metadata that makes ad-hoc codesigning fail. Clear it before Xcode signs.
+xattr -cr AbletonRPC AbletonRPCHelper Resources 2>/dev/null || true
+
 xcodebuild \
     -project AbletonRPC.xcodeproj \
     -scheme AbletonRPC \
     -configuration Release \
     -derivedDataPath build/DerivedData \
     CONFIGURATION_BUILD_DIR="$(pwd)/$BUILD_DIR" \
-    CODE_SIGN_IDENTITY="-" \
-    CODE_SIGNING_REQUIRED=YES \
-    CODE_SIGN_STYLE=Manual \
+    CODE_SIGNING_ALLOWED=NO \
+    CODE_SIGNING_REQUIRED=NO \
     DEVELOPMENT_TEAM="" \
     clean build \
-    2>&1 | grep -E "error:|warning:|Build succeeded|Build FAILED|Compiling|Linking|note:" \
-    || true
+    2>&1 | grep -E "error:|warning:|BUILD SUCCEEDED|BUILD FAILED|Compiling|Linking|note:"
 
 APP_PATH="$BUILD_DIR/AbletonRPC.app"
 
@@ -160,15 +159,16 @@ ok "Build succeeded: $APP_PATH ($(du -sh "$APP_PATH" | cut -f1))"
 log "Bundling Python runtime into app..."
 
 # Find the python.org Python framework
-PYTHON_BIN=$(command -v /usr/local/bin/python3.14 || \
-             command -v /usr/local/bin/python3 || \
+PYTHON_BIN=$(command -v /usr/local/bin/python3 || \
+             command -v /opt/homebrew/bin/python3.13 || \
+             command -v /usr/local/bin/python3.13 || \
              echo "")
 
 if [ -z "$PYTHON_BIN" ]; then
     warn "Could not find Python 3 — skipping bundling. Users will need Python installed."
 else
     # Resolve the real executable (may be a symlink)
-    PYTHON_REAL=$(python3 -c "import sys; print(sys.executable)" 2>/dev/null || "$PYTHON_BIN" -c "import sys; print(sys.executable)")
+    PYTHON_REAL=$("$PYTHON_BIN" -c "import sys; print(sys.executable)")
     PYTHON_VERSION=$("$PYTHON_BIN" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
 
     # Find the Python.framework root
@@ -259,8 +259,12 @@ if [ -d "$HELPER_IN_RESOURCES" ]; then
     ok "Moved helper to Library/LoginItems/"
 elif [ -d "$APP_PATH/Contents/Library/LoginItems/AbletonRPCHelper.app" ]; then
     ok "Helper already in correct location"
+elif [ -d "$BUILD_DIR/AbletonRPCHelper.app" ]; then
+    mkdir -p "$HELPER_DEST"
+    cp -R "$BUILD_DIR/AbletonRPCHelper.app" "$HELPER_DEST/"
+    ok "Embedded helper from build products into Library/LoginItems/"
 else
-    warn "Helper not found anywhere in bundle — registration will fail"
+    fail "Helper not found anywhere in build products"
 fi
 
 # 2. Copy Python daemon script into Resources/
@@ -277,8 +281,15 @@ fi
 
 # Re-sign after modifications
 log "Re-signing bundle after fixups..."
-codesign --force --deep --sign - "$APP_PATH" 2>/dev/null || true
-ok "Bundle re-signed"
+if [[ "$1" == "--install" ]]; then
+    # Documents/iCloud-backed workspaces may attach FinderInfo immediately.
+    # Sign the final /Applications copy below, after leaving that filesystem.
+    ok "Signing deferred to final installed copy"
+else
+    xattr -cr "$APP_PATH" 2>/dev/null || true
+    codesign --force --deep --sign - "$APP_PATH"
+    ok "Bundle re-signed"
+fi
 
 # ── Remove quarantine ─────────────────────────────────────────────────────
 log "Removing quarantine flags..."
@@ -305,8 +316,18 @@ if [[ "$1" == "--install" ]]; then
         rm -rf "/Applications/AbletonRPC.app"
     fi
     cp -R "$APP_PATH" "/Applications/"
+    xattr -cr "/Applications/AbletonRPC.app" 2>/dev/null || true
+    codesign --force --deep --sign - "/Applications/AbletonRPC.app"
     xattr -rd com.apple.quarantine "/Applications/AbletonRPC.app" 2>/dev/null || true
     ok "Installed to /Applications/AbletonRPC.app"
+
+    # Existing users already have this plist. Re-load it now so upgrading the
+    # app does not leave the helper stopped until the GUI is opened manually.
+    PLIST="$HOME/Library/LaunchAgents/com.kiwi.AbletonRPC.Helper.plist"
+    if [ -f "$PLIST" ]; then
+        launchctl bootstrap "gui/$(id -u)" "$PLIST" 2>/dev/null || true
+        ok "Background helper reloaded"
+    fi
 
     # Refresh Launch Services and Dock so the icon shows correctly
     log "Refreshing Dock icon cache..."

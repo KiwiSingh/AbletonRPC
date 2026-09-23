@@ -100,12 +100,17 @@ class BroadPresence(Presence):
 # ---------------------------------------------------------------------------
 
 class AbletonInstallation:
-    def __init__(self, name, ableton_path, log_path, client_id=None):
+    def __init__(self, name, ableton_path, log_path, client_id=None,
+                 install_hash=None):
         self.name        = name
         self.ableton_path = ableton_path
         self.log_path    = log_path
         self.client_id   = client_id or DEFAULT_CLIENT_ID
-        self.install_hash = hashlib.md5(ableton_path.encode()).hexdigest()[:8]
+        # Keep the persisted identity stable if an application is moved to a
+        # different disk. Older releases derived this on every load, which
+        # made the helper unable to find an installation after path repair.
+        self.install_hash = (install_hash or
+                             hashlib.md5(ableton_path.encode()).hexdigest()[:8])
 
     @classmethod
     def from_dict(cls, data):
@@ -114,6 +119,7 @@ class AbletonInstallation:
             data["ableton_path"],
             data["log_path"],
             data.get("client_id", DEFAULT_CLIENT_ID),
+            data.get("install_hash"),
         )
 
 
@@ -839,7 +845,9 @@ class AbletonRPCApp:
                     exe  = proc.info.get("exe") or ""
                     if (name == "Live" or "Ableton" in name) and ".app/Contents/MacOS" in exe:
                         app_path = exe.split(".app/Contents/MacOS")[0] + ".app"
-                        if app_path == self.installation.ableton_path:
+                        configured = os.path.realpath(self.installation.ableton_path)
+                        running = os.path.realpath(app_path)
+                        if running == configured:
                             return True
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     pass
